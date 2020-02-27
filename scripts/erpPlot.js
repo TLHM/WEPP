@@ -37,6 +37,7 @@ var erpPlot = function(parent, margin, footerHeight)
 
     // Default values for the actual values
     plot.xDomain = [-100,400];
+    plot.defaultY = [-20, 30];
     plot.yDomain = [-20, 30];
 
     //Create visual axes
@@ -148,6 +149,7 @@ var erpPlot = function(parent, margin, footerHeight)
         plot.files = flist;
         plot.curfile = 0;
         plot.bin = 0;
+        plot.navDir = 1;
 
         if(flist.length>0) {
             plot.loadFile(0);
@@ -169,28 +171,75 @@ var erpPlot = function(parent, margin, footerHeight)
         // Get our data into a json object
         plot.curERP = JSON.parse(event.target.result);
 
+        // Set current bin
+        plot.bin = 0;
+        if(plot.navDir < 0) {
+            plot.bin = plot.curERP.bins.length-1;
+        }
+
         plot.showCurERP();
     };
 
-    // Helper function to get path data from line
-    plot.lineData = function(chName, ch) {
-        // i tells us the channel we're converting
+    // Helper function to get path data for a channel
+    plot.lineData = function() {
         return d3.line()
             .x((d,i)=>plot.x(plot.curERP.times[i]))
-            .y((d,i)=>plot.y(plot.curERP.bins[plot.bin].data[ch][i]))
+            .y((d,i)=>plot.y(d));
     };
 
     // Function that actually displays an ERP
     // It should be a nice object now, with bins etc
     plot.showCurERP = function() {
         console.log(plot.curERP);
-        console.log(plot.lines.selectAll("path")
-            .data(plot.curERP.chan));
 
+        // Update our axes first
+        plot.xDomain[0] = plot.curERP.times[0];
+        plot.xDomain[1] = plot.curERP.times[plot.curERP.times.length-1];
+        plot.updateAx();
+
+        // Plot our butterfly lines
         plot.lines.selectAll("path")
-            .data(plot.curERP.chans)
+            .data(plot.curERP.bins[plot.bin].data)
             .join("path")
-                .attr("d",(d, i) => plot.lineData(d,i));
+                .attr("d",plot.lineData())
+                .attr('class','butterflyLine');
+    };
+
+    // For navigating bins, files
+    plot.prevBin = function() {
+        if(plot.bin==0) {
+            plot.prevFile();
+        } else {
+            plot.bin -= 1;
+
+            plot.showCurERP();
+        }
+    };
+
+    plot.prevFile = function() {
+        if(plot.curFile > 0) {
+            plot.curFile -= 1;
+            plot.navDir = -1;
+            plot.loadFile(plot.curFile);
+        }
+    };
+
+    plot.nextBin = function() {
+        if(plot.bin==plot.curERP.bins.length-1) {
+            plot.nextFile();
+        } else {
+            plot.bin += 1;
+
+            plot.showCurERP();
+        }
+    };
+
+    plot.nextFile = function() {
+        if(plot.curFile < plot.files.length-1) {
+            plot.curFile += 1;
+            plot.navDir = 1;
+            plot.loadFile(plot.curFile);
+        }
     };
 
 
