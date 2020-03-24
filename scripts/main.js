@@ -27,3 +27,18 @@ function loadFiles() {
   console.log("loading Files");
   erp.loadList(document.getElementById("selectDir").files);
 }
+
+// Add some button press functionality
+d3.select('body')
+  .on('keydown', function() {
+    console.log(d3.event.keyCode);
+
+    // Left Arrow
+    if(d3.event.keyCode == 37){
+      erp.prevBin();
+
+    // Right Arrow
+    } else if(d3.event.keyCode == 39) {
+      erp.nextBin();
+    }
+  })

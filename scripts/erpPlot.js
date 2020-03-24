@@ -207,6 +207,7 @@ var erpPlot = function(parent, margin, footerHeight)
 
     // For navigating bins, files
     plot.prevBin = function() {
+        console.log("prev Bin");
         if(plot.bin==0) {
             plot.prevFile();
         } else {
@@ -225,6 +226,9 @@ var erpPlot = function(parent, margin, footerHeight)
     };
 
     plot.nextBin = function() {
+        if(!plot.curERP.bins) return;
+
+        console.log("next Bin");
         if(plot.bin==plot.curERP.bins.length-1) {
             plot.nextFile();
         } else {
