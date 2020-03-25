@@ -40,6 +40,21 @@ var erpPlot = function(parent, margin, footerHeight)
     plot.defaultY = [-20, 30];
     plot.yDomain = [-20, 30];
 
+    // Group to hold plot background elements
+    plot.background = plot.body.append('g');
+    plot.bgRectPos = plot.background.append('rect')
+        .attr('y',0)
+        .attr('height', plot.h-plot.margin.bottom-plot.margin.top)
+        .attr('x',0)
+        .attr('width',0)
+        .attr('class','selectPos');
+    plot.bgRectNeg = plot.background.append('rect')
+        .attr('y',0)
+        .attr('height', plot.h-plot.margin.bottom-plot.margin.top)
+        .attr('x',0)
+        .attr('width',0)
+        .attr('class','selectNeg');
+
     //Create visual axes
     plot.xAxis = plot.body.append('g')
         .attr('transform','translate(0,'+(plot.h-plot.margin.bottom-plot.margin.top)+')');
@@ -306,10 +321,96 @@ var erpPlot = function(parent, margin, footerHeight)
         plot.yAxis.call(d3.axisLeft(plot.y));
 
         plot.line.datum(plot.curVals).attr('d',d3.line()
-                .x(function(d,i) {return plot.x(time[i])})
-                .y(function(d) {return plot.y(d)})
+                .x(function(d,i) {return plot.x(time[i]);})
+                .y(function(d) {return plot.y(d);})
                                           );
     };
+
+    /**
+        Drag handlers for highlighting time ranges
+    */
+    // clickType is 1 for left mouse (positive),
+    // 2 for right mouse (negative)
+    plot.clickType = -1;
+    plot.dragPos = [0, 0]; // Start, and dx
+    plot.dragStart = function()
+    {
+        //console.log(d3.event.sourceEvent.button);
+
+        plot.clickType = d3.event.sourceEvent.button;
+        plot.dragPos[0] = d3.mouse(this)[0] - plot.margin.left;
+        plot.dragPos[1] = plot.dragPos[0];
+    };
+    plot.dragUpdate= function()
+    {
+        // Update our mouse pos
+        plot.dragPos[1] = d3.mouse(this)[0] - plot.margin.left;
+
+        // Update highlight rect
+        plot.highlight();
+    };
+    plot.dragEnd = function()
+    {
+        // If we barely dragged, use a default width centered on av of x's
+        if(Math.abs(plot.dragPos[0]-plot.dragPos[1]) < 5)
+        {
+            var width = plot.x(20)-plot.x(0); // in pixels, select 40 ms
+            var middle = (plot.dragPos[0] + plot.dragPos[1])/2;
+            plot.dragPos[0] = middle - width;
+            plot.dragPos[1] = middle + width;
+            //console.log(width, middle);
+
+            // Update highlight rect
+            plot.highlight();
+        }
+        //console.log(d3.event);
+
+        // Reset the mouse button thing
+        plot.clickType = -1;
+    };
+    plot.dragHandler = d3.drag()
+            .on("start", plot.dragStart)
+            .on("drag", plot.dragUpdate)
+            .on("end", plot.dragEnd)
+            // This filter usually blocks right click, but we want both
+            .filter(function(){return true;});
+
+    /**
+        Click Handler
+    */
+    // plot.clickHandler = function(e)
+    // {
+    //     console.log(d3.event);
+    // };
+
+    /**
+        Function for highlighting parts of the background
+    */
+    plot.highlight = function()
+    {
+        // Normal left click = Positive
+        if(plot.clickType==0)
+        {
+            plot.bgRectPos
+                .attr('x', Math.min(plot.dragPos[0],plot.dragPos[1]))
+                .attr('width', Math.abs(plot.dragPos[0]-plot.dragPos[1]));
+
+        // Right click = Negative
+        } else if(plot.clickType == 2)
+        {
+            plot.bgRectNeg
+                .attr('x', Math.min(plot.dragPos[0],plot.dragPos[1]))
+                .attr('width', Math.abs(plot.dragPos[0]-plot.dragPos[1]));
+        }
+    };
+
+    // Set up click and drag handlers
+    plot.svg
+        .call(plot.dragHandler)
+        //.on("click", plot.clickHandler)
+        .on("contextmenu",function(){
+            d3.event.preventDefault();
+        });
 
     return plot;
 };

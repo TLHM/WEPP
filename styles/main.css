@@ -3,3 +3,15 @@
   stroke: black;
   fill: none;
 }
+
+.selectPos {
+  opacity: .2;
+  stroke: none;
+  fill: rgb(246, 170, 55);
+}
+
+.selectNeg {
+  opacity: .2;
+  stroke: none;
+  fill: rgb(120, 189, 238);
+}

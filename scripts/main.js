@@ -41,4 +41,4 @@ d3.select('body')
     } else if(d3.event.keyCode == 39) {
       erp.nextBin();
     }
-  })
+  });
