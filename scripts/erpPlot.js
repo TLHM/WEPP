@@ -262,30 +262,30 @@ var erpPlot = function(parent, margin, footerHeight)
     };
 
 
-    /**
-       Parses a row of the text ERP file, which is transposed so each time/electrode is a row
-       */
-    plot.loadFiles = function(d)
-    {
-        return {
-            Name: d[0],
-            vals: d.slice(1).map(function(value){ return +value; }).slice(0,d.length-2)
-        };
-    };
-
-    /**
-       Passes on read text to a parser, then displays the data
-       */
-    plot.parse = function(t)
-    {
-        plot.data = d3.tsvParseRows(t).map(plot.row);
-
-        // Fix x axis up
-        plot.x.domain(d3.extent(plot.data[0].vals));
-        plot.xAxis.call(d3.axisBottom(plot.x));
-
-        plot.displayChan();
-    };
+    // /**
+    //    Parses a row of the text ERP file, which is transposed so each time/electrode is a row
+    //    */
+    // plot.loadFiles = function(d)
+    // {
+    //     return {
+    //         Name: d[0],
+    //         vals: d.slice(1).map(function(value){ return +value; }).slice(0,d.length-2)
+    //     };
+    // };
+    //
+    // /**
+    //    Passes on read text to a parser, then displays the data
+    //    */
+    // plot.parse = function(t)
+    // {
+    //     plot.data = d3.tsvParseRows(t).map(plot.row);
+    //
+    //     // Fix x axis up
+    //     plot.x.domain(d3.extent(plot.data[0].vals));
+    //     plot.xAxis.call(d3.axisBottom(plot.x));
+    //
+    //     plot.displayChan();
+    // };
 
     /**
        Turns data into a SVG line/path
@@ -309,6 +309,7 @@ var erpPlot = function(parent, margin, footerHeight)
 
     /**
        Actually displays an ERP after it is loaded, given the channel you want
+       Channel should be passed in as a numeric string
        */
     plot.displayChan = function(ch='')
     {
@@ -402,6 +403,15 @@ var erpPlot = function(parent, margin, footerHeight)
                 .attr('x', Math.min(plot.dragPos[0],plot.dragPos[1]))
                 .attr('width', Math.abs(plot.dragPos[0]-plot.dragPos[1]));
         }
+    };
+
+    /**
+        Calculates the positive of negative peak in a time range
+        Applies to each channel
+    */
+    plot.calcPeak = function(peakType, timeRange, channel)
+    {
+
     };
 
     // Set up click and drag handlers
