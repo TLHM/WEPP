@@ -4,6 +4,20 @@
   fill: none;
 }
 
+.chanLineBG {
+  opacity: 1;
+  stroke: rgb(255, 255, 255);
+  stroke-width: 3;
+  fill: none;
+}
+
+.chanLine {
+  opacity: 1;
+  stroke: rgb(67, 124, 252);
+  stroke-width: 2;
+  fill: none;
+}
+
 .selectPos {
   opacity: .2;
   stroke: none;
@@ -14,4 +28,16 @@
   opacity: .2;
   stroke: none;
   fill: rgb(120, 189, 238);
+}
+
+.posPeak {
+  stroke: rgb(238, 62, 51);
+  stroke-width: 3;
+  fill: none;
+}
+
+.negPeak {
+  stroke: rgb(27, 158, 254);
+  stroke-width: 3;
+  fill: none;
 }
