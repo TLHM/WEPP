@@ -15,8 +15,13 @@ var erpPlot = function(parent, margin, footerHeight)
     // This is the object we'll return
     var plot = {};
 
-    // Create a svg div to hold everything
-    plot.svg = parent.append('svg');
+    // Header will hold info like the file name, bin of the current plot
+    plot.header = parent.append('div').attr('id','plotHeader');
+    plot.header.append('div').attr('id','fileNameDisplay').text("No File Loaded");
+    plot.header.append('div').attr('id','binDisplay').text("Bin: None");
+
+    // Create a svg div to hold all the plottin' and visuals
+    plot.svg = parent.append('svg').attr('id','plotSVG');
 
     plot.margin = margin;
 
@@ -35,7 +40,7 @@ var erpPlot = function(parent, margin, footerHeight)
 
     // Create the axes transform functions
     plot.x = d3.scaleLinear().range([0,plot.w-plot.margin.left-plot.margin.right]);
-    plot.y = d3.scaleLinear().range([plot.h-plot.margin.bottom-plot.margin.top,0]);
+    plot.y = d3.scaleLinear().range([plot.h-plot.margin.bottom-plot.margin.top,0]).clamp(true);
 
     // Default values for the actual values
     plot.xDomain = [-100,400];
@@ -165,7 +170,7 @@ var erpPlot = function(parent, margin, footerHeight)
     // Holding our files we'll load and go through
     plot.fr = new FileReader();
     plot.files = [];
-    plot.curfile = 0;
+    plot.curFile = 0;
     plot.curERP = {};
 
 
@@ -178,7 +183,7 @@ var erpPlot = function(parent, margin, footerHeight)
     plot.loadList = function(flist) {
         console.log(flist);
         plot.files = flist;
-        plot.curfile = 0;
+        plot.curFile = 0;
         plot.bin = 0;
         plot.navDir = 1;
 
@@ -224,6 +229,10 @@ var erpPlot = function(parent, margin, footerHeight)
     plot.showCurERP = function() {
         console.log(plot.curERP);
 
+        // Update display of filename and bin
+        plot.header.select('#fileNameDisplay').text(plot.curFileName);
+        plot.header.select('#binDisplay').text(plot.curERP.bins[plot.bin].name);
+
         // Update our axes first
         plot.xDomain[0] = plot.curERP.times[0];
         plot.xDomain[1] = plot.curERP.times[plot.curERP.times.length-1];
@@ -231,8 +240,8 @@ var erpPlot = function(parent, margin, footerHeight)
 
         // Estimate the "important" channels, ie ones not named E##
         // If there are none, pick the middle channel arbitrarily
-        var chanRegex = /E\d+/;
-        plot.pickChans = plot.curERP.chans.map(x => !chanRegex.test(x));
+        var chanRegex = /E[12345]$/;
+        plot.pickChans = plot.curERP.chans.map(x => chanRegex.test(x));
         console.log(plot.pickChans);
 
         // Plot our butterfly lines
@@ -244,6 +253,7 @@ var erpPlot = function(parent, margin, footerHeight)
                 .attr('class','butterflyLine');
 
         // Plot our special lines
+        // Double, since we want an outline to make them more visible
         plot.outlines.selectAll("path")
             .data(plot.curERP.bins[plot.bin].data.filter((d, ind) => plot.pickChans[ind]))
             .join("path")
@@ -253,7 +263,7 @@ var erpPlot = function(parent, margin, footerHeight)
             .data(plot.curERP.bins[plot.bin].data.filter((d, ind) => plot.pickChans[ind]))
             .join("path")
                 .attr("d",plot.lineData())
-                .attr('class','chanLine');
+                .attr('class',function(d, i){ return 'chanLine lineType'+(i%5); });
     };
 
     // For navigating bins, files
@@ -296,6 +306,15 @@ var erpPlot = function(parent, margin, footerHeight)
             plot.loadFile(plot.curFile);
         }
     };
+
+    // Function to accept our current peaks and continue to the next bin
+    plot.acceptAndNext = function()
+    {
+        // Accept / save our peaks
+
+        // move on
+        plot.nextBin();
+    }
 
     /**
         Drag handlers for highlighting time ranges

@@ -2,7 +2,7 @@
 
 // Margins for our plot, also we want some footer space
 var footerHeight = 100;
-var margin = {top: 50, right: 50, bottom: 50, left: 50};
+var margin = {top: 10, right: 50, bottom: 30, left: 50};
 
 // Create the svg element that will hold the fancy D3
 var plotDiv = d3.select('body').append('div').attr('id','plotContainer');
@@ -40,5 +40,10 @@ d3.select('body')
     // Right Arrow
     } else if(d3.event.keyCode == 39) {
       erp.nextBin();
+    }
+    // Space Bar (accept + continue)
+    else if(d3.event.keyCode == 32)
+    {
+      erp.acceptAndNext();
     }
   });

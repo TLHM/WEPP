@@ -37,7 +37,41 @@
 }
 
 .negPeak {
-  stroke: rgb(27, 158, 254);
+  stroke: rgb(229, 27, 254);
   stroke-width: 3;
   fill: none;
+}
+
+#fileNameDisplay {
+  margin: 15px 50px 10px;
+  font: 1.2em sans-serif;
+}
+
+#binDisplay {
+  margin: 10px 50px 10px;
+  font: .9em sans-serif;
+}
+
+#fileIn {
+  margin: 10px 40px 10px;
+}
+
+.lineType0 {
+  stroke: solid;
+}
+
+.lineType1 {
+  stroke-dasharray: 8,4;
+}
+
+.lineType2 {
+  stroke-dasharray: 2,2;
+}
+
+.lineType3 {
+  stroke-dasharray: 5,5,2,5;
+}
+
+.lineType4 {
+  stroke-dasharray: 5,5;
 }
