@@ -17,8 +17,11 @@ var erpPlot = function(parent, margin, footerHeight)
 
     // Header will hold info like the file name, bin of the current plot
     plot.header = parent.append('div').attr('id','plotHeader');
-    plot.header.append('div').attr('id','fileNameDisplay').text("No File Loaded");
-    plot.header.append('div').attr('id','binDisplay').text("Bin: None");
+    plot.header.append('div').attr('id','fileBin');
+    plot.header.select('#fileBin').append('div').attr('id','fileNameDisplay').text("No File Loaded");
+    plot.header.select('#fileBin').append('div').attr('id','binDisplay').text("Bin: None");
+
+    plot.header.append('svg').attr('id','chanLabels');
 
     // Create a svg div to hold all the plottin' and visuals
     plot.svg = parent.append('svg').attr('id','plotSVG');
@@ -240,9 +243,40 @@ var erpPlot = function(parent, margin, footerHeight)
 
         // Estimate the "important" channels, ie ones not named E##
         // If there are none, pick the middle channel arbitrarily
-        var chanRegex = /E[12345]$/;
-        plot.pickChans = plot.curERP.chans.map(x => chanRegex.test(x));
+        var chanRegex = /E\d+/;
+        plot.pickChans = plot.curERP.chans.map(x => !chanRegex.test(x));
         console.log(plot.pickChans);
+
+        // Get our important channel names
+        plot.pickedChanNames = plot.curERP.chans.filter((d, ind) => plot.pickChans[ind]);
+
+        // Display our channels in our channel labels svg
+        // If there are more than 5, then we don't have enough different
+        // Line types, so we'll just give up and show nothing
+        var showChans = plot.pickedChanNames;
+        if(plot.pickedChanNames.length > 5)
+        {
+            showChans = [];
+        }
+        console.log(showChans);
+        var labels = plot.header.select('#chanLabels').selectAll('g')
+            .data(showChans)
+            .join('g')
+                .attr('id','chanLabel');
+        labels.append('line')
+                .attr('x1', function(d,i){ return 10 + 120*i; })
+                .attr('x2', function(d,i){ return 40 + 120*i; })
+                .attr('y1', function(d,i){ return 65; })
+                .attr('y2', function(d,i){ return 65; })
+                .attr('class', function(d, i){ return 'chanLine lineType'+(i%5); });
+        labels.append('text')
+                .attr("font-family", "sans-serif")
+                .attr("font-size", 10)
+                .attr("text-anchor", "left")
+                .attr("y", 68)
+                .attr("x", function(d,i){ return 45 + 120*i; })
+                .text(function(d){ return d; });
+
 
         // Plot our butterfly lines
         console.log(plot.curERP.bins[plot.bin].data.filter((d, ind) => plot.pickChans[ind]));
@@ -262,8 +296,8 @@ var erpPlot = function(parent, margin, footerHeight)
         plot.lines.selectAll("path")
             .data(plot.curERP.bins[plot.bin].data.filter((d, ind) => plot.pickChans[ind]))
             .join("path")
-                .attr("d",plot.lineData())
-                .attr('class',function(d, i){ return 'chanLine lineType'+(i%5); });
+                .attr("d", plot.lineData())
+                .attr('class', function(d, i){ return 'chanLine lineType'+(i%5); });
     };
 
     // For navigating bins, files
@@ -314,7 +348,7 @@ var erpPlot = function(parent, margin, footerHeight)
 
         // move on
         plot.nextBin();
-    }
+    };
 
     /**
         Drag handlers for highlighting time ranges

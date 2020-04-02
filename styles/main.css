@@ -42,6 +42,19 @@
   fill: none;
 }
 
+#plotHeader {
+  display: flex;
+}
+
+#fileBin {
+  width: 40%;
+}
+
+#chanLabels {
+  flex: 1;
+  height: 80px;
+}
+
 #fileNameDisplay {
   margin: 15px 50px 10px;
   font: 1.2em sans-serif;
