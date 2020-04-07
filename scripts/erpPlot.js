@@ -115,6 +115,9 @@ var erpPlot = function(parent, margin, footerHeight)
     // Each point in array will be an obj with:
     //  amp, lat, chan, bin, file
     plot.peaks = {pos:[],neg:[]};
+    // Saves with extra info: file and polarity as part of the obj
+    // Added to by savePeaks function
+    plot.savedPeaks = [];
 
     // Function to update the axes and grid based on current
     // values of xDomain and  yDomain
@@ -169,6 +172,12 @@ var erpPlot = function(parent, margin, footerHeight)
     plot.id = 'NONE';
     plot.bin = 0;
     plot.ch = 'NONE';
+
+    // Config variables
+    plot.defaultTimeWindows = [];
+    plot.redcap = {};
+    // Tracks how many peaks we've already uploaded to RedCap
+    plot.uploadedPeaks = 0;
 
     // Holding our files we'll load and go through
     plot.fr = new FileReader();
@@ -275,7 +284,7 @@ var erpPlot = function(parent, margin, footerHeight)
                 .attr("text-anchor", "left")
                 .attr("y", 68)
                 .attr("x", function(d,i){ return 45 + 120*i; })
-                .text(function(d){ return d; });
+                .text(function(d){ return d.substring(0,Math.min(d.length,15)); });
 
 
         // Plot our butterfly lines
@@ -298,6 +307,10 @@ var erpPlot = function(parent, margin, footerHeight)
             .join("path")
                 .attr("d", plot.lineData())
                 .attr('class', function(d, i){ return 'chanLine lineType'+(i%5); });
+
+        // Clear the old peaks, get new ones if we have defaults
+        plot.clearPeaks();
+        plot.highlightDefault();
     };
 
     // For navigating bins, files
@@ -345,9 +358,49 @@ var erpPlot = function(parent, margin, footerHeight)
     plot.acceptAndNext = function()
     {
         // Accept / save our peaks
+        plot.savePeaks();
 
         // move on
         plot.nextBin();
+    };
+
+    // Function sends our peaks to a redcap database, if we have the config
+    window.post = function(url, data) {
+        console.log(url, ...data);
+        return fetch(url, {method: "POST", body: data});
+    };
+    plot.sendPeaksToRedcap = function()
+    {
+        if(!plot.redcap.token || !plot.redcap.url) return;
+
+        var request = new FormData();
+        request.append('token', plot.redcap.token);
+        request.append('content', "record");
+        request.append('format', "json");
+        request.append('type', "flat");
+        request.append('overwriteBehavior', "normal");
+        request.append('forceAutoNumber', true);
+        request.append('data', plot.getPeaksAsJSON());
+        request.append('returnContent', "count");
+        request.append('returnFormat', "json");
+
+        post(plot.redcap.url, request)
+            .then(function(res)
+            {
+                console.log("Response:",res);
+                return res.json();
+            })
+            .then(function(data)
+            {
+                if(data.count && data.count > 0)
+                {
+                    plot.uploadedPeaks += data.count;
+                }
+                else
+                {
+                    console.log(data);
+                }
+            });
     };
 
     /**
@@ -435,10 +488,10 @@ var erpPlot = function(parent, margin, footerHeight)
                 );
 
                 plot.peaks.pos.push({
-                    amp: peak[0],
-                    lat: peak[1],
+                    lat: peak[0],
+                    amp: peak[1],
                     file: plot.curFileName,
-                    bin: plot.curERP.bins[plot.bin],
+                    bin: plot.curERP.bins[plot.bin].name,
                     chan: plot.curERP.chans[ind]
                 });
             }
@@ -467,10 +520,10 @@ var erpPlot = function(parent, margin, footerHeight)
                 );
 
                 plot.peaks.neg.push({
-                    amp: peak[0],
-                    lat: peak[1],
+                    lat: peak[0],
+                    amp: peak[1],
                     file: plot.curFileName,
-                    bin: plot.curERP.bins[plot.bin],
+                    bin: plot.curERP.bins[plot.bin].name,
                     chan: plot.curERP.chans[ind]
                 });
             }
@@ -478,6 +531,73 @@ var erpPlot = function(parent, margin, footerHeight)
             // Update display
             plot.showPeaks();
         }
+    };
+
+    // Highlights defaults time windows, if any
+    // Called when going to a new file / bin
+    plot.highlightDefault = function()
+    {
+        // Loop through and highlight each default window
+        for(var i=0; i<plot.defaultTimeWindows.length; i++)
+        {
+            plot.dragPos = plot.defaultTimeWindows[i].range.map(t => plot.x(t));
+            plot.clickType = plot.defaultTimeWindows[i].type == 'pos' ? 0 : 2;
+
+            plot.highlight();
+        }
+    };
+
+    // Clears all the peaks ; moving to another plot without saving
+    plot.clearPeaks = function()
+    {
+        plot.peaks.pos = [];
+        plot.peaks.neg = [];
+        plot.showPeaks();
+
+        plot.bgRectPos.attr('width','0');
+        plot.bgRectNeg.attr('width','0');
+    };
+
+    // Saves our current peaks
+    // Tries to upload them to Redcap as well, if possible
+    plot.savePeaks = function()
+    {
+        var i=0;
+        var p;
+        for(i=0; i<plot.peaks.pos.length; i++)
+        {
+            p = plot.peaks.pos[i];
+            plot.savedPeaks.push({
+                record_id: plot.savedPeaks.length,
+                filename: p.file,
+                peakpolarity: 1,
+                latency: p.lat,
+                amplitude: p.amp,
+                bin: p.bin,
+                chan: p.chan
+            });
+        }
+        for(i=0; i<plot.peaks.neg.length; i++)
+        {
+            p = plot.peaks.neg[i];
+            plot.savedPeaks.push({
+                record_id: plot.savedPeaks.length,
+                filename: p.file,
+                peakpolarity: 2,
+                latency: p.lat,
+                amplitude: p.amp,
+                bin: p.bin,
+                chan: p.chan
+            });
+        }
+
+        plot.sendPeaksToRedcap();
+    };
+
+    // Gets our peaks as a JSON string for upload to redcap
+    plot.getPeaksAsJSON = function()
+    {
+        return JSON.stringify(plot.savedPeaks.slice(plot.uploadedPeaks), separators=(",",":"));
     };
 
     /**
@@ -573,10 +693,10 @@ var erpPlot = function(parent, margin, footerHeight)
         }
         else if(peakLats.length < 1)
         {
-            return [curExtreme, -999];
+            return [-999, curExtreme];
         }
 
-        return [curExtreme, peakLats[0]];
+        return [peakLats[0], curExtreme];
     };
 
     // Displays our peaks
@@ -602,6 +722,20 @@ var erpPlot = function(parent, margin, footerHeight)
                 .attr("r", 5)
                 .attr('class','negPeak');
     };
+
+
+    // Configuration functions
+
+    plot.setRedcap = function(newRed)
+    {
+        plot.redcap = newRed;
+    };
+
+    plot.setDefaultTimes = function(newDefaults)
+    {
+        plot.defaultTimeWindows = newDefaults;
+    };
+
 
     // Set up click and drag handlers
     plot.svg

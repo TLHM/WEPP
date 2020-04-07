@@ -1,3 +1,7 @@
+body{
+  font-family: sans-serif;
+}
+
 .butterflyLine {
   opacity: .1;
   stroke: black;
@@ -87,4 +91,41 @@
 
 .lineType4 {
   stroke-dasharray: 5,5;
+}
+
+#confTitle {
+  margin: 20px 45px 0px 45px;
+  font: bold 1.2em sans-serif;
+}
+
+.configPrompt {
+  font: 12px sans-serif;
+  margin: 5px 0px 5px 0px;
+}
+
+#configContainer {
+  margin: 10px 45px 10px;
+  display: flex;
+}
+
+#redcap {
+  margin: none;
+}
+
+#defaultTimes {
+  margin: 0px 20px;
+}
+
+.redcapInput {
+  width: 300px;
+}
+
+.twInput {
+  width: 50px;
+  display: inline;
+}
+
+.twSpacer {
+  margin: 0px 10px;
+  display: inline;
 }

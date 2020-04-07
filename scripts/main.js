@@ -1,4 +1,5 @@
 // Main script that mostly just sets everything up on a overall scale
+d3.select('body').select('#noScript').style('display','None');
 
 // Margins for our plot, also we want some footer space
 var footerHeight = 100;
@@ -6,12 +7,15 @@ var margin = {top: 10, right: 50, bottom: 30, left: 50};
 
 // Create the svg element that will hold the fancy D3
 var plotDiv = d3.select('body').append('div').attr('id','plotContainer');
+d3.select('body').append('h2').attr('id','confTitle').text('Configuration: ');
+var confDiv = d3.select('body').append('div').attr('id','configContainer');
 
 // Create an erpPlot using this element
 var erp = erpPlot(plotDiv, margin, footerHeight);
+var conf = createPlotConfig(confDiv, erp);
 
 // Create our browser button
-var fileIn = d3.select('body').append('div')
+var fileIn = plotDiv.append('div')
   .attr('id','fileIn')
   .append('input');
 
