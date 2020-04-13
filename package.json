@@ -1,0 +1,52 @@
+{
+  "name": "web_erp_peak_picker",
+  "version": "0.0.5",
+  "description": "Web app for visual inspection and peak picking of ERPs.",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "watch": "webpack --watch",
+    "start": "webpack-dev-server --open  --config webpack.dev.js",
+    "build": "webpack --config webpack.prod.js",
+    "bab": "babel src -d lib"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TLHM/WEPP.git"
+  },
+  "keywords": [
+    "ERP",
+    "EEG",
+    "D3",
+    "WEPP"
+  ],
+  "author": "Yale DAAC",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/TLHM/WEPP/issues"
+  },
+  "homepage": "https://github.com/TLHM/WEPP#readme",
+  "devDependencies": {
+    "@babel/core": "^7.9.0",
+    "@babel/preset-env": "^7.9.5",
+    "babel-cli": "^6.26.0",
+    "babel-core": "^6.26.3",
+    "babel-loader": "^8.1.0",
+    "babel-preset-es2015": "^6.24.1",
+    "clean-webpack-plugin": "^3.0.0",
+    "css-loader": "^3.5.2",
+    "html-webpack-plugin": "^4.2.0",
+    "mini-css-extract-plugin": "^0.9.0",
+    "style-loader": "^1.1.3",
+    "webpack": "^4.42.1",
+    "webpack-cli": "^3.3.11",
+    "webpack-dev-server": "^3.10.3",
+    "webpack-merge": "^4.2.2"
+  },
+  "dependencies": {
+    "d3": "^5.15.1"
+  }
+}

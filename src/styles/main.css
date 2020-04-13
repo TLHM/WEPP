@@ -1,0 +1,131 @@
+body{
+  font-family: sans-serif;
+}
+
+.butterflyLine {
+  opacity: .1;
+  stroke: black;
+  fill: none;
+}
+
+.chanLineBG {
+  opacity: 1;
+  stroke: rgb(255, 255, 255);
+  stroke-width: 3;
+  fill: none;
+}
+
+.chanLine {
+  opacity: 1;
+  stroke: rgb(67, 124, 252);
+  stroke-width: 2;
+  fill: none;
+}
+
+.selectPos {
+  opacity: .2;
+  stroke: none;
+  fill: rgb(246, 170, 55);
+}
+
+.selectNeg {
+  opacity: .2;
+  stroke: none;
+  fill: rgb(120, 189, 238);
+}
+
+.posPeak {
+  stroke: rgb(238, 62, 51);
+  stroke-width: 3;
+  fill: none;
+}
+
+.negPeak {
+  stroke: rgb(229, 27, 254);
+  stroke-width: 3;
+  fill: none;
+}
+
+#plotHeader {
+  display: flex;
+}
+
+#fileBin {
+  width: 40%;
+}
+
+#chanLabels {
+  flex: 1;
+  height: 80px;
+}
+
+#fileNameDisplay {
+  margin: 15px 50px 10px;
+  font: 1.2em sans-serif;
+}
+
+#binDisplay {
+  margin: 10px 50px 10px;
+  font: .9em sans-serif;
+}
+
+#fileIn {
+  margin: 10px 40px 10px;
+}
+
+.lineType0 {
+  stroke: solid;
+}
+
+.lineType1 {
+  stroke-dasharray: 8,4;
+}
+
+.lineType2 {
+  stroke-dasharray: 2,2;
+}
+
+.lineType3 {
+  stroke-dasharray: 5,5,2,5;
+}
+
+.lineType4 {
+  stroke-dasharray: 5,5;
+}
+
+#confTitle {
+  margin: 20px 45px 0px 45px;
+  font: bold 1.2em sans-serif;
+}
+
+.configPrompt {
+  font: 12px sans-serif;
+  margin: 5px 0px 5px 0px;
+}
+
+#configContainer {
+  margin: 10px 45px 10px;
+  display: flex;
+}
+
+#redcap {
+  margin: none;
+}
+
+#defaultTimes {
+  margin: 0px 20px;
+}
+
+.redcapInput {
+  width: 300px;
+}
+
+.twInput {
+  width: 50px;
+  display: inline;
+}
+
+.twSpacer {
+  margin: 0px 10px;
+  display: inline;
+}
