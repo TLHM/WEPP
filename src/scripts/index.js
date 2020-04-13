@@ -27,18 +27,18 @@ var fileIn = plotDiv.append('div')
   .attr('id','fileIn')
   .append('input');
 
+// This is called when the browse button changes what it's got
+var loadFiles = function(){
+  console.log("loading Files");
+  erp.loadList(document.getElementById("selectDir").files);
+};
+
 fileIn.attr('type',"file")
   .attr("id","selectDir")
   .attr("name","fileList")
   .attr('webkitdirectory','true')
   .attr('multiple','true')
-  .attr('onchange','loadFiles();');
-
-// This is called when the browse button changes what it's got
-function loadFiles() {
-  console.log("loading Files");
-  erp.loadList(document.getElementById("selectDir").files);
-}
+  .on('change',loadFiles);
 
 // Add some button press functionality
 d3.select('body')
