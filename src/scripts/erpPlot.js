@@ -130,7 +130,7 @@ export default function erpPlot(parent, margin, footerHeight)
         plot.y.domain(plot.yDomain);
 
         // Want ticks based on intervals of 100ms, 10µV
-        console.log(plot.getTicks(plot.xDomain[0],plot.xDomain[1],100))
+        console.log(plot.getTicks(plot.xDomain[0],plot.xDomain[1],100));
         plot.xAxCall.scale(plot.x).tickValues(plot.getTicks(plot.xDomain[0],plot.xDomain[1],100));
         plot.yAxCall.scale(plot.y).tickValues(plot.getTicks(plot.yDomain[0],plot.yDomain[1],10));
 
@@ -182,85 +182,41 @@ export default function erpPlot(parent, margin, footerHeight)
     // Tracks how many peaks we've already uploaded to RedCap
     plot.uploadedPeaks = 0;
 
-    // Holding our files we'll load and go through
-    plot.fr = new FileReader();
-    plot.files = [];
-    plot.curFile = 0;
-    plot.curERP = {};
-
 
     /**********************
     More function definitions
     *********************** */
 
-    // Called when we get a new batch of files to load
-    // Saves the list for further use, loads first file
-    plot.loadList = function(flist) {
-        console.log(flist);
-        plot.files = flist;
-        plot.curFile = 0;
-        plot.bin = 0;
-        plot.navDir = 1;
-
-        if(flist.length>0) {
-            plot.loadFile(0);
-        }
-    };
-
-    // Actually loads a file from our file list
-    // Uses a FileReader object
-    // On completion, it will display the file thanks to
-    // The filereader's event responses
-    plot.loadFile = function(i) {
-        if(i < 0 || i >= plot.files.length) return;
-
-        plot.fr.readAsText(plot.files[i]);
-        plot.curFileName = plot.files[i].name;
-    };
-
-    // Function that runs once a file is loaded
-    plot.fr.onload = function(event) {
-        // Get our data into a json object
-        plot.curERP = JSON.parse(event.target.result);
-
-        // Set current bin
-        plot.bin = 0;
-        if(plot.navDir < 0) {
-            plot.bin = plot.curERP.bins.length-1;
-        }
-
-        plot.showCurERP();
-    };
-
     // Helper function to get path data for a channel
     plot.lineData = function() {
         return d3.line()
-            .x((d,i)=>plot.x(plot.curERP.times[i]))
+            .x((d,i)=>plot.x(plot.curTimes[i]))
             .y((d,i)=>plot.y(d));
     };
 
-    // Function that actually displays an ERP
-    // It should be a nice object now, with bins etc
-    plot.showCurERP = function() {
-        console.log(plot.curERP);
+    // Function called for a new ERP file
+    // Updates time, axes, as well as some display
+    // Doesn't plot the data
+    plot.updateERP = function(erp)
+    {
+        plot.curFileName = erp.fileName;
+        plot.header.select('#fileNameDisplay').text(erp.fileName);
 
-        // Update display of filename and bin
-        plot.header.select('#fileNameDisplay').text(plot.curFileName);
-        plot.header.select('#binDisplay').text(plot.curERP.bins[plot.bin].name);
+        plot.curTimes = erp.times;
 
-        // Update our axes first
-        plot.xDomain[0] = plot.curERP.times[0];
-        plot.xDomain[1] = plot.curERP.times[plot.curERP.times.length-1];
+        // Update our axes
+        plot.xDomain[0] = plot.curTimes[0];
+        plot.xDomain[1] = plot.curTimes[plot.curTimes.length-1];
         plot.updateAx();
 
         // Estimate the "important" channels, ie ones not named E##
         // If there are none, pick the middle channel arbitrarily
         var chanRegex = /E\d+/;
-        plot.pickChans = plot.curERP.chans.map(x => !chanRegex.test(x));
-        console.log(plot.pickChans);
+        plot.pickChans = erp.chans.map(x => !chanRegex.test(x));
+        //console.log(plot.pickChans);
 
         // Get our important channel names
-        plot.pickedChanNames = plot.curERP.chans.filter((d, ind) => plot.pickChans[ind]);
+        plot.pickedChanNames = erp.chans.filter((d, ind) => plot.pickChans[ind]);
 
         // Display our channels in our channel labels svg
         // If there are more than 5, then we don't have enough different
@@ -270,7 +226,7 @@ export default function erpPlot(parent, margin, footerHeight)
         {
             showChans = [];
         }
-        console.log(showChans);
+        //console.log(showChans);
         var labels = plot.header.select('#chanLabels').selectAll('g')
             .data(showChans)
             .join('g')
@@ -289,24 +245,33 @@ export default function erpPlot(parent, margin, footerHeight)
                 .attr("x", function(d,i){ return 45 + 120*i; })
                 .text(function(d){ return d.substring(0,Math.min(d.length,15)); });
 
+    };
+
+    // Function that actually plots channel data
+    // Called each time that a new bin is loaded
+    plot.showBinData = function(bin) {
+        //console.log(bin);
+
+        // Update display of bin
+        plot.header.select('#binDisplay').text(bin.name);
 
         // Plot our butterfly lines
-        console.log(plot.curERP.bins[plot.bin].data.filter((d, ind) => plot.pickChans[ind]));
+        console.log(bin.data.filter((d, ind) => plot.pickChans[ind]));
         plot.bgLines.selectAll("path")
-            .data(plot.curERP.bins[plot.bin].data.filter((d, ind) => !plot.pickChans[ind]))
+            .data(bin.data.filter((d, ind) => !plot.pickChans[ind]))
             .join("path")
-                .attr("d",plot.lineData())
+                .attr("d", plot.lineData())
                 .attr('class','butterflyLine');
 
         // Plot our special lines
         // Double, since we want an outline to make them more visible
         plot.outlines.selectAll("path")
-            .data(plot.curERP.bins[plot.bin].data.filter((d, ind) => plot.pickChans[ind]))
+            .data(bin.data.filter((d, ind) => plot.pickChans[ind]))
             .join("path")
-                .attr("d",plot.lineData())
+                .attr("d", plot.lineData())
                 .attr('class','chanLineBG');
         plot.lines.selectAll("path")
-            .data(plot.curERP.bins[plot.bin].data.filter((d, ind) => plot.pickChans[ind]))
+            .data(bin.data.filter((d, ind) => plot.pickChans[ind]))
             .join("path")
                 .attr("d", plot.lineData())
                 .attr('class', function(d, i){ return 'chanLine lineType'+(i%5); });
@@ -316,56 +281,16 @@ export default function erpPlot(parent, margin, footerHeight)
         plot.highlightDefault();
     };
 
-    // For navigating bins, files
-    plot.prevBin = function() {
-        console.log("prev Bin");
-        if(plot.bin==0) {
-            plot.prevFile();
-        } else {
-            plot.bin -= 1;
-
-            plot.showCurERP();
-        }
-    };
-
-    plot.prevFile = function() {
-        if(plot.curFile > 0) {
-            plot.curFile -= 1;
-            plot.navDir = -1;
-            plot.loadFile(plot.curFile);
-        }
-    };
-
-    plot.nextBin = function() {
-        if(!plot.curERP.bins) return;
-
-        console.log("next Bin");
-        if(plot.bin==plot.curERP.bins.length-1) {
-            plot.nextFile();
-        } else {
-            plot.bin += 1;
-
-            plot.showCurERP();
-        }
-    };
-
-    plot.nextFile = function() {
-        if(plot.curFile < plot.files.length-1) {
-            plot.curFile += 1;
-            plot.navDir = 1;
-            plot.loadFile(plot.curFile);
-        }
-    };
-
-    // Function to accept our current peaks and continue to the next bin
-    plot.acceptAndNext = function()
-    {
-        // Accept / save our peaks
-        plot.savePeaks();
-
-        // move on
-        plot.nextBin();
-    };
+    // Moving this to index
+    // // Function to accept our current peaks and continue to the next bin
+    // plot.acceptAndNext = function()
+    // {
+    //     // Accept / save our peaks
+    //     plot.savePeaks();
+    //
+    //     // move on
+    //     plot.nextBin();
+    // };
 
     // Function sends our peaks to a redcap database, if we have the config
     window.post = function(url, data) {
@@ -468,6 +393,7 @@ export default function erpPlot(parent, margin, footerHeight)
     */
     plot.highlight = function()
     {
+        return;
         if(!plot.curFileName) return;
 
         var ind, peak;
@@ -610,97 +536,97 @@ export default function erpPlot(parent, margin, footerHeight)
         peakType should be 0 for positive, 1 for negative
         timeRange should be in ms
     */
-    plot.calcPeak = function(peakType, timeRange, channel)
-    {
-        var chanData = plot.curERP.bins[plot.bin].data[channel];
-
-        // How many points before and after we check to make sure we're a "peak"
-        var neighbors = 3;
-
-        // Translate our time in ms to indicies in our data arrays
-        var indicies = [plot.curERP.times.indexOf(Math.round(timeRange[0])),
-            plot.curERP.times.indexOf(Math.round(timeRange[1]))];
-        if(indicies[0]<neighbors) indicies[0] = neighbors;
-        if(indicies[1]>plot.curERP.times.length-neighbors) indicies[1] = plot.curERP.times.length-neighbors;
-
-        // console.log(timeRange, indicies, plot.curERP.times[indicies[0]], plot.curERP.times[indicies[1]]);
-
-        //var peakAmps = [];
-        var peakLats = [];
-        var curExtreme = peakType==0 ? -999 : 999;
-
-        // Loop through points, see if it's a better peak
-        // We want the maximal (positive) or minimal (negative)
-        for(var i=indicies[0]; i < indicies[1]; i++)
-        {
-            var v = chanData[i];
-
-            // Get the mean of its left and right neighbors
-            var meanL = 0;
-            for(var ii=i-neighbors; ii<i; ii++)
-            {
-                meanL += chanData[ii];
-            }
-            meanL /= neighbors;
-
-            var meanR = 0;
-            for(ii=i+1; ii<i+neighbors+1; ii++)
-            {
-                meanR += chanData[ii];
-            }
-            meanR /= neighbors;
-
-            // check to see if this point is more extreme than
-            // Its immediate neighbors, and the average of its neighbors
-            if(peakType == 0)
-            {
-                if(v > meanL && v > meanR &&
-                    v > chanData[i-1] && v > chanData[i+1])
-                {
-                    // We found a new positive peak
-                    // If it's >= current extreme, then we save it
-                    if(v > curExtreme)
-                    {
-                        curExtreme = v;
-                        peakLats = [plot.curERP.times[i]];
-                    }
-                    else if(v == curExtreme)
-                    {
-                        peakLats.push(plot.curERP.times[i]);
-                    }
-                }
-            }
-            else if(v < meanL && v < meanR &&
-                v < chanData[i-1] && v < chanData[i+1])
-            {
-                // We found a new negative peak
-                // If it's <= current extreme, then we save it
-                if(v < curExtreme)
-                {
-                    curExtreme = v;
-                    peakLats = [plot.curERP.times[i]];
-                }
-                else if(v == curExtreme)
-                {
-                    peakLats.push(plot.curERP.times[i]);
-                }
-            }
-        }
-
-        // If we have multiple latencies, we'll use the median
-        // Note that this is only used if we found multiple peaks with the same amp
-        if(peakLats.length > 1)
-        {
-            var mid = Math.roung(peakLats/2);
-            peakLats = [peakLats[mid]];
-        }
-        else if(peakLats.length < 1)
-        {
-            return [-999, curExtreme];
-        }
-
-        return [peakLats[0], curExtreme];
-    };
+    // plot.calcPeak = function(peakType, timeRange, channel)
+    // {
+    //     var chanData = plot.curERP.bins[plot.bin].data[channel];
+    //
+    //     // How many points before and after we check to make sure we're a "peak"
+    //     var neighbors = 3;
+    //
+    //     // Translate our time in ms to indicies in our data arrays
+    //     var indicies = [plot.curERP.times.indexOf(Math.round(timeRange[0])),
+    //         plot.curERP.times.indexOf(Math.round(timeRange[1]))];
+    //     if(indicies[0]<neighbors) indicies[0] = neighbors;
+    //     if(indicies[1]>plot.curERP.times.length-neighbors) indicies[1] = plot.curERP.times.length-neighbors;
+    //
+    //     // console.log(timeRange, indicies, plot.curERP.times[indicies[0]], plot.curERP.times[indicies[1]]);
+    //
+    //     //var peakAmps = [];
+    //     var peakLats = [];
+    //     var curExtreme = peakType==0 ? -999 : 999;
+    //
+    //     // Loop through points, see if it's a better peak
+    //     // We want the maximal (positive) or minimal (negative)
+    //     for(var i=indicies[0]; i < indicies[1]; i++)
+    //     {
+    //         var v = chanData[i];
+    //
+    //         // Get the mean of its left and right neighbors
+    //         var meanL = 0;
+    //         for(var ii=i-neighbors; ii<i; ii++)
+    //         {
+    //             meanL += chanData[ii];
+    //         }
+    //         meanL /= neighbors;
+    //
+    //         var meanR = 0;
+    //         for(ii=i+1; ii<i+neighbors+1; ii++)
+    //         {
+    //             meanR += chanData[ii];
+    //         }
+    //         meanR /= neighbors;
+    //
+    //         // check to see if this point is more extreme than
+    //         // Its immediate neighbors, and the average of its neighbors
+    //         if(peakType == 0)
+    //         {
+    //             if(v > meanL && v > meanR &&
+    //                 v > chanData[i-1] && v > chanData[i+1])
+    //             {
+    //                 // We found a new positive peak
+    //                 // If it's >= current extreme, then we save it
+    //                 if(v > curExtreme)
+    //                 {
+    //                     curExtreme = v;
+    //                     peakLats = [plot.curERP.times[i]];
+    //                 }
+    //                 else if(v == curExtreme)
+    //                 {
+    //                     peakLats.push(plot.curERP.times[i]);
+    //                 }
+    //             }
+    //         }
+    //         else if(v < meanL && v < meanR &&
+    //             v < chanData[i-1] && v < chanData[i+1])
+    //         {
+    //             // We found a new negative peak
+    //             // If it's <= current extreme, then we save it
+    //             if(v < curExtreme)
+    //             {
+    //                 curExtreme = v;
+    //                 peakLats = [plot.curERP.times[i]];
+    //             }
+    //             else if(v == curExtreme)
+    //             {
+    //                 peakLats.push(plot.curERP.times[i]);
+    //             }
+    //         }
+    //     }
+    //
+    //     // If we have multiple latencies, we'll use the median
+    //     // Note that this is only used if we found multiple peaks with the same amp
+    //     if(peakLats.length > 1)
+    //     {
+    //         var mid = Math.round(peakLats/2);
+    //         peakLats = [peakLats[mid]];
+    //     }
+    //     else if(peakLats.length < 1)
+    //     {
+    //         return [-999, curExtreme];
+    //     }
+    //
+    //     return [peakLats[0], curExtreme];
+    // };
 
     // Displays our peaks
     plot.showPeaks = function()
