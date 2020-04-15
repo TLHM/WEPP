@@ -7,11 +7,16 @@
 
 export default function erpDataContainer() {
     var data = {
-        reader : new FileReader(),
-        fileList : [],
+        reader: new FileReader(),
+        fileList: [],
         curFileIndex : 0,
         curBinIndex: 0,
-        curERP : {},
+        curERP: {},
+        tempPeaks: [],  // Holds peaks until highlight is finalized
+        pickedPeaks: [], // Holds peaks for current bin that we've picked
+        peakArchive: [], // Holds peaks for current session
+        uploadedCount: 0,
+        peakIndexCounter: 0,
     };
 
     // Called when we get a new batch of files to load
@@ -60,7 +65,7 @@ export default function erpDataContainer() {
         }
 
         data.onNewERPFile(data.curERP);
-        data.onNewBin(data.curERP.bins[data.curBinIndex])
+        data.onNewBin(data.curERP.bins[data.curBinIndex]);
     };
 
     // Callback that gets called when new ERP file is loaded
@@ -121,7 +126,202 @@ export default function erpDataContainer() {
         }
     };
 
+    // Peaks!
 
+    // Clears the current picked peaks. If you want to record them first,
+    // call savePeaks
+    data.clearPeaks = function() {
+        data.pickedPeaks = [];
+    };
+
+    // Pushes our current picked peaks into the archive
+    // Has callback for sending to elsewhere as well
+    data.savePeaks = function() {
+        data.peakArchive = data.peakArchive.concat(data.pickedPeaks);
+        data.onSave(data.pickedPeaks);
+    };
+
+    // Updates the notes field for all current picked peaks
+    data.updateNotes = function(newNotes) {
+        for(var i=0; i<data.pickedPeaks.length; i++) {
+            data.pickedPeaks[i].notes = newNotes;
+        }
+    };
+
+    // Callback for when peaks are saved
+    // Accepts an array of the peaks that were saved
+    data.onSave = function(savedPeaks) {
+        console.log('Peaks were saved');
+    };
+
+    // Updates our record of which peaks we've uploaded
+    data.markUploaded = function(count) {
+        data.uploadedCount += count;
+    };
+
+    /**
+        Calculates the positive or negative peak in a time range
+        Applies to a single channel
+        Returns (lat, amp) of found peak, or None
+        Also saves the full peak information internally
+
+        Params:
+            peakType should be 1 for positive, 2 for negative
+            timeRange should be in ms
+            channel should be the index of the channel
+    */
+    data.calcPeak = function(peakType, timeRange, channel)
+    {
+        var chanData = data.curERP.bins[data.curBinIndex].data[channel];
+        const t = data.curERP.times;
+
+        // How many points before and after we check to make sure we're a "peak"
+        var neighbors = 3;
+
+        // Translate our time in ms to indicies in our data arrays
+        var indicies = [t.indexOf(Math.round(timeRange[0])),
+            t.indexOf(Math.round(timeRange[1]))];
+        if(indicies[0]<neighbors) indicies[0] = neighbors;
+        if(indicies[1]>t.length-neighbors) indicies[1] = t.length-neighbors;
+
+        // console.log(timeRange, indicies, data.curERP.times[indicies[0]], data.curERP.times[indicies[1]]);
+
+        //var peakAmps = [];
+        var peakLats = [];
+        var curExtreme = peakType==1 ? -999 : 999;
+
+        // Loop through points, see if it's a better peak
+        // We want the maximal (positive) or minimal (negative)
+        for(var i=indicies[0]; i < indicies[1]; i++)
+        {
+            var v = chanData[i];
+
+            // Get the mean of its left and right neighbors
+            var meanL = 0;
+            for(var ii=i-neighbors; ii<i; ii++)
+            {
+                meanL += chanData[ii];
+            }
+            meanL /= neighbors;
+
+            var meanR = 0;
+            for(ii=i+1; ii<i+neighbors+1; ii++)
+            {
+                meanR += chanData[ii];
+            }
+            meanR /= neighbors;
+
+            // check to see if this point is more extreme than
+            // Its immediate neighbors, and the average of its neighbors
+            if(peakType == 1)
+            {
+                if(v > meanL && v > meanR &&
+                    v > chanData[i-1] && v > chanData[i+1])
+                {
+                    // We found a new positive peak
+                    // If it's >= current extreme, then we save it
+                    if(v > curExtreme)
+                    {
+                        curExtreme = v;
+                        peakLats = [t[i]];
+                    }
+                    else if(v == curExtreme)
+                    {
+                        peakLats.push(t[i]);
+                    }
+                }
+            }
+            else if(v < meanL && v < meanR &&
+                v < chanData[i-1] && v < chanData[i+1])
+            {
+                // We found a new negative peak
+                // If it's <= current extreme, then we save it
+                if(v < curExtreme)
+                {
+                    curExtreme = v;
+                    peakLats = [t[i]];
+                }
+                else if(v == curExtreme)
+                {
+                    peakLats.push(t[i]);
+                }
+            }
+        }
+
+        // If we have multiple latencies, we'll use the median
+        // Note that this is only used if we found multiple peaks with the same amp
+        if(peakLats.length > 1)
+        {
+            var mid = Math.round(peakLats/2);
+            peakLats = [peakLats[mid]];
+        }
+        // Return null if no peaks found
+        else if(peakLats.length < 1)
+        {
+            return [];
+        }
+
+        // Construct our peak object, push it into our picked peaks
+        const now = new Date(Date.now());
+        var peak = {
+            record_id: data.peakIndexCounter,
+            filename: data.curFileName,
+            peakpolarity: peakType,
+            latency: peakLats[0],
+            amplitude: curExtreme,
+            bin: data.curERP.bins[data.curBinIndex].name,
+            chan: data.curERP.chans[channel],
+            timestamp: now.toUTCString(),
+            notes: "",
+        };
+        data.tempPeaks.push(peak);
+        data.peakIndexCounter += 1;
+
+        return peak;
+    };
+
+    // Moves current temp peaks into picked peaks, barring duplicates
+    data.keepTempPeaks = function() {
+        var j;
+        for(var i=0; i<data.tempPeaks.length; i++) {
+            // Check against all pickedPeaks
+            // Make sure we're not a duplicate
+            var duplicate = false;
+            for(j=0; j<data.pickedPeaks.length; j++) {
+                if(data.tempPeaks[i].amplitude === data.pickedPeaks[j].amplitude &&
+                  data.tempPeaks[i].latency === data.pickedPeaks[j].latency &&
+                  data.tempPeaks[i].chan === data.pickedPeaks[j].chan) {
+                    duplicate = true;
+                    break;
+                }
+            }
+
+            if(!duplicate) {
+                data.pickedPeaks.push(data.tempPeaks[i]);
+            }
+        }
+
+        data.clearTempPeaks();
+    };
+
+    // Clears all the tempPeaks we had
+    data.clearTempPeaks= function() {
+        data.tempPeaks = [];
+    }
+
+    // Gets our peaks as a JSON string for upload to redcap
+    // Only returns those not yet uploaded
+    data.getPeaksAsJSON = function()
+    {
+        return JSON.stringify(data.peakArchive.slice(data.uploadedCount), (",",":"));
+    };
+
+    // Returns out pos and neg peaks
+    // Includes temp peaks
+    data.getPickedPeaks = function(positive=true) {
+        const temps = data.tempPeaks.filter(p => p.peakpolarity==(positive ? 1 : 2));
+        return data.pickedPeaks.filter(p => p.peakpolarity==(positive ? 1 : 2)).concat(temps);
+    };
 
     return data;
 }

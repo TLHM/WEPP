@@ -277,72 +277,24 @@ export default function erpPlot(parent, margin, footerHeight)
                 .attr('class', function(d, i){ return 'chanLine lineType'+(i%5); });
 
         // Clear the old peaks, get new ones if we have defaults
-        plot.clearPeaks();
-        plot.highlightDefault();
-    };
-
-    // Moving this to index
-    // // Function to accept our current peaks and continue to the next bin
-    // plot.acceptAndNext = function()
-    // {
-    //     // Accept / save our peaks
-    //     plot.savePeaks();
-    //
-    //     // move on
-    //     plot.nextBin();
-    // };
-
-    // Function sends our peaks to a redcap database, if we have the config
-    window.post = function(url, data) {
-        console.log(url, ...data);
-        return fetch(url, {method: "POST", body: data});
-    };
-    plot.sendPeaksToRedcap = function()
-    {
-        if(!plot.redcap.token || !plot.redcap.url) return;
-
-        var request = new FormData();
-        request.append('token', plot.redcap.token);
-        request.append('content', "record");
-        request.append('format', "json");
-        request.append('type', "flat");
-        request.append('overwriteBehavior', "normal");
-        request.append('forceAutoNumber', true);
-        request.append('data', plot.getPeaksAsJSON());
-        request.append('returnContent', "count");
-        request.append('returnFormat', "json");
-
-        post(plot.redcap.url, request)
-            .then(function(res)
-            {
-                console.log("Response:",res);
-                return res.json();
-            })
-            .then(function(data)
-            {
-                if(data.count && data.count > 0)
-                {
-                    plot.uploadedPeaks += data.count;
-                }
-                else
-                {
-                    console.log(data);
-                }
-            });
+        // Moved to the onNewBin set in index.js
+        //plot.clearPeaks();
+        //plot.highlightDefault();
     };
 
     /**
         Drag handlers for highlighting time ranges
     */
-    // clickType is 1 for left mouse (positive),
+    // d3.event.sourceEvent.button is 0 for left mouse (positive),
     // 2 for right mouse (negative)
+    // We translate it into pos:1, neg:2 and keep that as clickType
     plot.clickType = -1;
     plot.dragPos = [0, 0]; // Start, and dx
     plot.dragStart = function()
     {
         //console.log(d3.event.sourceEvent.button);
 
-        plot.clickType = d3.event.sourceEvent.button;
+        plot.clickType = d3.event.sourceEvent.button==0 ? 1 : 2;
         plot.dragPos[0] = d3.mouse(this)[0] - plot.margin.left;
         plot.dragPos[1] = plot.dragPos[0];
     };
@@ -353,6 +305,9 @@ export default function erpPlot(parent, margin, footerHeight)
 
         // Update highlight rect
         plot.highlight();
+    };
+    plot.onDragEnd = function() {
+        console.log('drag has ended');
     };
     plot.dragEnd = function()
     {
@@ -372,6 +327,9 @@ export default function erpPlot(parent, margin, footerHeight)
 
         // Reset the mouse button thing
         plot.clickType = -1;
+
+        // Callback
+        plot.onDragEnd();
     };
     plot.dragHandler = d3.drag()
             .on("start", plot.dragStart)
@@ -381,53 +339,19 @@ export default function erpPlot(parent, margin, footerHeight)
             .filter(function(){return true;});
 
     /**
-        Click Handler
-    */
-    // plot.clickHandler = function(e)
-    // {
-    //     console.log(d3.event);
-    // };
-
-    /**
         Function for highlighting parts of the background
     */
     plot.highlight = function()
     {
-        return;
         if(!plot.curFileName) return;
 
         var ind, peak;
         // Normal left click = Positive
-        if(plot.clickType==0)
+        if(plot.clickType==1)
         {
             plot.bgRectPos
                 .attr('x', Math.min(plot.dragPos[0],plot.dragPos[1]))
                 .attr('width', Math.abs(plot.dragPos[0]-plot.dragPos[1]));
-
-            // Search for a peak in the time range for each channel
-            plot.peaks.pos = [];
-            for(ind=0; ind<plot.curERP.chans.length; ind++)
-            {
-                if(!plot.pickChans[ind]) continue;
-
-                peak = plot.calcPeak(0,
-                    [plot.x.invert(Math.min(plot.dragPos[0],plot.dragPos[1])),
-                    plot.x.invert(Math.max(plot.dragPos[0],plot.dragPos[1]))],
-                    ind
-                );
-
-                plot.peaks.pos.push({
-                    lat: peak[0],
-                    amp: peak[1],
-                    file: plot.curFileName,
-                    bin: plot.curERP.bins[plot.bin].name,
-                    chan: plot.curERP.chans[ind]
-                });
-            }
-
-            // Update display
-            plot.showPeaks();
-
         }
         // Right click = Negative
         else if(plot.clickType == 2)
@@ -435,219 +359,60 @@ export default function erpPlot(parent, margin, footerHeight)
             plot.bgRectNeg
                 .attr('x', Math.min(plot.dragPos[0],plot.dragPos[1]))
                 .attr('width', Math.abs(plot.dragPos[0]-plot.dragPos[1]));
-
-            // Search for a peak in the time range for each channel
-            plot.peaks.neg = [];
-            for(ind=0; ind<plot.curERP.chans.length; ind++)
-            {
-                if(!plot.pickChans[ind]) continue;
-
-                peak = plot.calcPeak(1,
-                    [plot.x.invert(Math.min(plot.dragPos[0],plot.dragPos[1])),
-                    plot.x.invert(Math.max(plot.dragPos[0],plot.dragPos[1]))],
-                    ind
-                );
-
-                plot.peaks.neg.push({
-                    lat: peak[0],
-                    amp: peak[1],
-                    file: plot.curFileName,
-                    bin: plot.curERP.bins[plot.bin].name,
-                    chan: plot.curERP.chans[ind]
-                });
-            }
-
-            // Update display
-            plot.showPeaks();
         }
+
+        plot.onHighlight(
+            [
+                plot.x.invert(Math.min(plot.dragPos[0],plot.dragPos[1])),
+                plot.x.invert(Math.max(plot.dragPos[0],plot.dragPos[1]))
+            ],
+            plot.clickType);
+    };
+
+    // Callback that gets called when we highlight
+    // Parameters are timeRange (ms) and polarity (0=pos, 1=neg)
+    plot.onHighlight = function(timeRange, polarity) {
+        console.log("Highlight!")
     };
 
     // Highlights defaults time windows, if any
     // Called when going to a new file / bin
     plot.highlightDefault = function()
     {
+        // Reset the highlights
+        plot.bgRectPos.attr('width','0');
+        plot.bgRectNeg.attr('width','0');
+
         // Loop through and highlight each default window
         for(var i=0; i<plot.defaultTimeWindows.length; i++)
         {
             plot.dragPos = plot.defaultTimeWindows[i].range.map(t => plot.x(t));
-            plot.clickType = plot.defaultTimeWindows[i].type == 'pos' ? 0 : 2;
+            plot.clickType = plot.defaultTimeWindows[i].type == 'pos' ? 1 : 2;
 
             plot.highlight();
         }
     };
 
-    // Clears all the peaks ; moving to another plot without saving
-    plot.clearPeaks = function()
-    {
-        plot.peaks.pos = [];
-        plot.peaks.neg = [];
-        plot.showPeaks();
-
-        plot.bgRectPos.attr('width','0');
-        plot.bgRectNeg.attr('width','0');
-    };
-
-    // Saves our current peaks
-    // Tries to upload them to Redcap as well, if possible
-    plot.savePeaks = function()
-    {
-        var i=0;
-        var p;
-        for(i=0; i<plot.peaks.pos.length; i++)
-        {
-            p = plot.peaks.pos[i];
-            plot.savedPeaks.push({
-                record_id: plot.savedPeaks.length,
-                filename: p.file,
-                peakpolarity: 1,
-                latency: p.lat,
-                amplitude: p.amp,
-                bin: p.bin,
-                chan: p.chan
-            });
-        }
-        for(i=0; i<plot.peaks.neg.length; i++)
-        {
-            p = plot.peaks.neg[i];
-            plot.savedPeaks.push({
-                record_id: plot.savedPeaks.length,
-                filename: p.file,
-                peakpolarity: 2,
-                latency: p.lat,
-                amplitude: p.amp,
-                bin: p.bin,
-                chan: p.chan
-            });
-        }
-
-        plot.sendPeaksToRedcap();
-    };
-
-    // Gets our peaks as a JSON string for upload to redcap
-    plot.getPeaksAsJSON = function()
-    {
-        return JSON.stringify(plot.savedPeaks.slice(plot.uploadedPeaks), separators=(",",":"));
-    };
-
-    /**
-        Calculates the positive of negative peak in a time range
-        Applies to a single channel
-        Returns (lat, amp) of found peak
-        peakType should be 0 for positive, 1 for negative
-        timeRange should be in ms
-    */
-    // plot.calcPeak = function(peakType, timeRange, channel)
-    // {
-    //     var chanData = plot.curERP.bins[plot.bin].data[channel];
-    //
-    //     // How many points before and after we check to make sure we're a "peak"
-    //     var neighbors = 3;
-    //
-    //     // Translate our time in ms to indicies in our data arrays
-    //     var indicies = [plot.curERP.times.indexOf(Math.round(timeRange[0])),
-    //         plot.curERP.times.indexOf(Math.round(timeRange[1]))];
-    //     if(indicies[0]<neighbors) indicies[0] = neighbors;
-    //     if(indicies[1]>plot.curERP.times.length-neighbors) indicies[1] = plot.curERP.times.length-neighbors;
-    //
-    //     // console.log(timeRange, indicies, plot.curERP.times[indicies[0]], plot.curERP.times[indicies[1]]);
-    //
-    //     //var peakAmps = [];
-    //     var peakLats = [];
-    //     var curExtreme = peakType==0 ? -999 : 999;
-    //
-    //     // Loop through points, see if it's a better peak
-    //     // We want the maximal (positive) or minimal (negative)
-    //     for(var i=indicies[0]; i < indicies[1]; i++)
-    //     {
-    //         var v = chanData[i];
-    //
-    //         // Get the mean of its left and right neighbors
-    //         var meanL = 0;
-    //         for(var ii=i-neighbors; ii<i; ii++)
-    //         {
-    //             meanL += chanData[ii];
-    //         }
-    //         meanL /= neighbors;
-    //
-    //         var meanR = 0;
-    //         for(ii=i+1; ii<i+neighbors+1; ii++)
-    //         {
-    //             meanR += chanData[ii];
-    //         }
-    //         meanR /= neighbors;
-    //
-    //         // check to see if this point is more extreme than
-    //         // Its immediate neighbors, and the average of its neighbors
-    //         if(peakType == 0)
-    //         {
-    //             if(v > meanL && v > meanR &&
-    //                 v > chanData[i-1] && v > chanData[i+1])
-    //             {
-    //                 // We found a new positive peak
-    //                 // If it's >= current extreme, then we save it
-    //                 if(v > curExtreme)
-    //                 {
-    //                     curExtreme = v;
-    //                     peakLats = [plot.curERP.times[i]];
-    //                 }
-    //                 else if(v == curExtreme)
-    //                 {
-    //                     peakLats.push(plot.curERP.times[i]);
-    //                 }
-    //             }
-    //         }
-    //         else if(v < meanL && v < meanR &&
-    //             v < chanData[i-1] && v < chanData[i+1])
-    //         {
-    //             // We found a new negative peak
-    //             // If it's <= current extreme, then we save it
-    //             if(v < curExtreme)
-    //             {
-    //                 curExtreme = v;
-    //                 peakLats = [plot.curERP.times[i]];
-    //             }
-    //             else if(v == curExtreme)
-    //             {
-    //                 peakLats.push(plot.curERP.times[i]);
-    //             }
-    //         }
-    //     }
-    //
-    //     // If we have multiple latencies, we'll use the median
-    //     // Note that this is only used if we found multiple peaks with the same amp
-    //     if(peakLats.length > 1)
-    //     {
-    //         var mid = Math.round(peakLats/2);
-    //         peakLats = [peakLats[mid]];
-    //     }
-    //     else if(peakLats.length < 1)
-    //     {
-    //         return [-999, curExtreme];
-    //     }
-    //
-    //     return [peakLats[0], curExtreme];
-    // };
-
-    // Displays our peaks
-    plot.showPeaks = function()
+    // Displays peaks
+    plot.showPeaks = function(pos, neg)
     {
         //console.log(plot.peaks);
 
         // Display positive peaks
         plot.posPeaks.selectAll("circle")
-            .data(plot.peaks.pos)
+            .data(pos)
             .join("circle")
-                .attr("cx", function(d){ return plot.x(d.lat); })
-                .attr("cy", function(d){ return plot.y(d.amp); })
+                .attr("cx", function(d){ return plot.x(d.latency); })
+                .attr("cy", function(d){ return plot.y(d.amplitude); })
                 .attr("r", 5)
                 .attr('class','posPeak');
 
         // Display negative peaks
         plot.negPeaks.selectAll("circle")
-            .data(plot.peaks.neg)
+            .data(neg)
             .join("circle")
-                .attr("cx", function(d){ return plot.x(d.lat); })
-                .attr("cy", function(d){ return plot.y(d.amp); })
+                .attr("cx", function(d){ return plot.x(d.latency); })
+                .attr("cy", function(d){ return plot.y(d.amplitude); })
                 .attr("r", 5)
                 .attr('class','negPeak');
     };

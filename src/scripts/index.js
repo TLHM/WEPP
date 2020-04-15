@@ -4,6 +4,7 @@ import * as d3 from 'd3';
 import erpPlot from './erpPlot.js';
 import createPlotConfig from './plotConfig.js';
 import erpDataContainer from './erpDataContainer.js';
+import redcapComs from './redcapComs.js';
 
 import '../styles/main.css';
 
@@ -24,8 +25,9 @@ var plotDiv = d3.select('body').append('div').attr('id','plotContainer');
 d3.select('body').append('h2').attr('id','confTitle').text('Configuration: ');
 var confDiv = d3.select('body').append('div').attr('id','configContainer');
 
-// Create an erpPlot using this element
+// Create some of our objects with their divs
 var mainPlot = erpPlot(plotDiv, margin, footerHeight);
+var rc = redcapComs(confDiv.append('div').attr('id','redConf'));
 var conf = createPlotConfig(confDiv, mainPlot);
 
 // Set some callbacks to link the data and the plot
@@ -34,7 +36,47 @@ data.onNewERPFile = function(erp) {
 };
 
 data.onNewBin = function(bin) {
+  data.clearPeaks();
+
   mainPlot.showBinData(bin);
+  mainPlot.showPeaks([],[]);
+  mainPlot.highlightDefault();
+};
+
+mainPlot.onHighlight = function(timeRange, polarity) {
+  // Only want one set of peaks from this highlight
+  data.clearTempPeaks();
+
+  // Loop through all picked channels, pick peaks
+  for(var i=0; i<mainPlot.pickChans.length; i++) {
+    if(!mainPlot.pickChans[i]) continue;
+
+    data.calcPeak(polarity, timeRange, i);
+  }
+
+  // Display peaks
+  mainPlot.showPeaks(data.getPickedPeaks(), data.getPickedPeaks(false));
+};
+
+// We've ended our highlight dragging, keep the peaks we have
+mainPlot.onDragEnd = function() {
+  data.keepTempPeaks();
+};
+
+rc.onPost = function(response) {
+  console.log(response);
+  if(response.count && response.count > 0) {
+    console.log("successful upload!");
+    data.markUploaded(response.count);
+  }
+  // If we didn't get a positive count, retry
+  else {
+    rc.onQueueReady();
+  }
+};
+
+rc.onQueueReady = function() {
+  rc.sendPeaksToRedcap(data.getPeaksAsJSON());
 };
 
 // Create our browser button
@@ -55,7 +97,10 @@ var fileIn = plotDiv.append('div')
 // This is called on space bar
 var acceptAndNext = function() {
   // Accept / save our peaks
-  //plot.savePeaks();
+  data.savePeaks();
+
+  // If we aren't already pending, send our peaks to redCap
+  rc.sendPeaksToRedcap(data.getPeaksAsJSON());
 
   // move on
   data.nextBin();
