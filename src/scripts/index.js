@@ -5,6 +5,7 @@ import erpPlot from './erpPlot.js';
 import createPlotConfig from './plotConfig.js';
 import erpDataContainer from './erpDataContainer.js';
 import redcapComs from './redcapComs.js';
+import erpInfoPanel from './erpInfoPanel.js';
 
 import '../styles/main.css';
 
@@ -20,7 +21,16 @@ var data = erpDataContainer();
 var footerHeight = 100;
 var margin = {top: 10, right: 50, bottom: 30, left: 50};
 
-// Create the svg element that will hold the fancy D3
+// Make our info panel
+var iPanel = erpInfoPanel(d3.select('body').append('div').attr('id','infoPanel'));
+iPanel.onFileSel(function(){
+  data.selectFile(+d3.event.target.value);
+});
+iPanel.onBinSel(function(){
+  data.selectBin(+d3.event.target.value);
+});
+
+// Create the svg element that will hold the fancy D3 plot
 var plotDiv = d3.select('body').append('div').attr('id','plotContainer');
 d3.select('body').append('h2').attr('id','confTitle').text('Configuration: ');
 var confDiv = d3.select('body').append('div').attr('id','configContainer');
@@ -33,6 +43,10 @@ var conf = createPlotConfig(confDiv, mainPlot);
 // Set some callbacks to link the data and the plot
 data.onNewERPFile = function(erp) {
   mainPlot.updateERP(erp);
+
+  iPanel.setBins(data.getBinNames());
+  iPanel.selectFile(data.curFileIndex);
+  iPanel.selectBin(data.curBinIndex);
 };
 
 data.onNewBin = function(bin) {
@@ -41,6 +55,8 @@ data.onNewBin = function(bin) {
   mainPlot.showBinData(bin);
   mainPlot.showPeaks([],[]);
   mainPlot.highlightDefault();
+
+  iPanel.selectBin(data.curBinIndex);
 };
 
 mainPlot.onHighlight = function(timeRange, polarity) {
@@ -92,6 +108,8 @@ var fileIn = plotDiv.append('div')
   .on('change',function(){
     console.log("loading Files");
     data.loadList(document.getElementById("selectDir").files);
+    iPanel.setFiles(data.fileList);
+    iPanel.setBins(['test','one','two']);
   });
 
 // This is called on space bar

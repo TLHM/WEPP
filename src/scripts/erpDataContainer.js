@@ -28,13 +28,24 @@ export default function erpDataContainer() {
         for(var i=0; i<flist.length; i++) {
             if(flist[i].name.endsWith('.json')) data.fileList.push(flist[i]);
         }
-        console.log(data.fileList);
+        // Sort it
+        data.fileList.sort((a,b) => a.name.localeCompare(b.name));
 
         // Default file and bin index
         data.curFileIndex = 0;
         data.curBinIndex = 0;
 
         // Load first file, if there is one
+        data.loadCurrentFile();
+    };
+
+    // Selects a specific file
+    data.selectFile = function(index) {
+        if(index < 0 || index >= data.fileList.length) return;
+        if(index === data.curFileIndex) return;
+
+        data.curFileIndex = index;
+        data.curBinIndex = 0;
         data.loadCurrentFile();
     };
 
@@ -86,6 +97,17 @@ export default function erpDataContainer() {
 
 
     // For navigating bins, files
+    data.getBinNames = function() {
+        return data.curERP.bins.map(b => b.name);
+    };
+    data.selectBin = function(index) {
+        if(index < 0 || index >= data.curERP.bins.length) return;
+        if(index === data.curBinIndex) return;
+
+        data.curBinIndex = index;
+        data.onNewBin(data.curERP.bins[data.curBinIndex]);
+    };
+
     data.prevBin = function() {
         console.log("prev Bin");
         if(data.curBinIndex === 0) {

@@ -18,12 +18,8 @@ export default function erpPlot(parent, margin, footerHeight)
     // This is the object we'll return
     var plot = {};
 
-    // Header will hold info like the file name, bin of the current plot
+    // Header will show channels and their line types
     plot.header = parent.append('div').attr('id','plotHeader');
-    plot.header.append('div').attr('id','fileBin');
-    plot.header.select('#fileBin').append('div').attr('id','fileNameDisplay').text("No File Loaded");
-    plot.header.select('#fileBin').append('div').attr('id','binDisplay').text("Bin: None");
-
     plot.header.append('svg').attr('id','chanLabels');
 
     // Create a svg div to hold all the plottin' and visuals
