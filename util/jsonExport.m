@@ -34,6 +34,7 @@ function jsonExport(fileDir, outputFolder)
         % Create our own object with less junk
         expERP = [];
         expERP.chans = {ERP.chanlocs(:).labels};
+        expERP.chanlocs = [ERP.chanlocs(:).X; ERP.chanlocs(:).Y]';
         expERP.bins = [];
         for b = 1:ERP.nbin
             expERP.bins(b).name = ERP.bindescr{b};
