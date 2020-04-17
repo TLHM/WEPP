@@ -44,10 +44,16 @@ export default function redcapComs(selection) {
         // Some basic validation
         if(urlValid && rcComs.tokenInput.property("value").length == 32)
         {
-          rcComs.url = rcComs.urlInput.property("value");
-          rcComs.token = rcComs.tokenInput.property("value");
-          rcComs.attemptCount = 0;
-          rcComs.validConnection = false;
+            // Only continue if it's actually different
+            if(rcComs.url === rcComs.urlInput.property("value") &&
+                rcComs.token === rcComs.tokenInput.property("value")) return;
+
+            rcComs.url = rcComs.urlInput.property("value");
+            rcComs.token = rcComs.tokenInput.property("value");
+            rcComs.attemptCount = 0;
+            rcComs.validConnection = false;
+
+            rcComs.onChangeSettings();
         }
     };
     rcComs.urlInput.on('change', rcComs.updateRedcapSettings);
@@ -127,6 +133,11 @@ export default function redcapComs(selection) {
         {
             console.log(response);
         }
+    };
+
+    // Callback for when our values have changed
+    rcComs.onChangeSettings = function() {
+        console.log('Redcap Settings Updated');
     };
 
     return rcComs;

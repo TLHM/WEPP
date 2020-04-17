@@ -205,23 +205,14 @@ export default function erpPlot(parent, margin, footerHeight)
         plot.xDomain[1] = plot.curTimes[plot.curTimes.length-1];
         plot.updateAx();
 
-        // Estimate the "important" channels, ie ones not named E##
-        // If there are none, pick the middle channel arbitrarily
-        var chanRegex = /E\d+/;
-        plot.pickChans = erp.chans.map(x => !chanRegex.test(x));
-        //console.log(plot.pickChans);
-
-        // Get our important channel names
-        plot.pickedChanNames = erp.chans.filter((d, ind) => plot.pickChans[ind]);
-
         // Display our channels in our channel labels svg
         // If there are more than 5, then we don't have enough different
         // Line types, so we'll just give up and show nothing
-        var showChans = plot.pickedChanNames;
-        if(plot.pickedChanNames.length > 5)
-        {
-            showChans = [];
-        }
+        var showChans = erp.selectedChanNames;
+        // if(plot.pickedChanNames.length > 5)
+        // {
+        //     showChans = [];
+        // }
         //console.log(showChans);
         var labels = plot.header.select('#chanLabels').selectAll('g')
             .data(showChans)
@@ -245,16 +236,16 @@ export default function erpPlot(parent, margin, footerHeight)
 
     // Function that actually plots channel data
     // Called each time that a new bin is loaded
-    plot.showBinData = function(bin) {
+    plot.showBinData = function(bin, selectedChannels) {
         //console.log(bin);
 
         // Update display of bin
         plot.header.select('#binDisplay').text(bin.name);
 
         // Plot our butterfly lines
-        console.log(bin.data.filter((d, ind) => plot.pickChans[ind]));
+        console.log(bin.data.filter((d, ind) => selectedChannels[ind]));
         plot.bgLines.selectAll("path")
-            .data(bin.data.filter((d, ind) => !plot.pickChans[ind]))
+            .data(bin.data.filter((d, ind) => !selectedChannels[ind]))
             .join("path")
                 .attr("d", plot.lineData())
                 .attr('class','butterflyLine');
@@ -262,12 +253,12 @@ export default function erpPlot(parent, margin, footerHeight)
         // Plot our special lines
         // Double, since we want an outline to make them more visible
         plot.outlines.selectAll("path")
-            .data(bin.data.filter((d, ind) => plot.pickChans[ind]))
+            .data(bin.data.filter((d, ind) => selectedChannels[ind]))
             .join("path")
                 .attr("d", plot.lineData())
                 .attr('class','chanLineBG');
         plot.lines.selectAll("path")
-            .data(bin.data.filter((d, ind) => plot.pickChans[ind]))
+            .data(bin.data.filter((d, ind) => selectedChannels[ind]))
             .join("path")
                 .attr("d", plot.lineData())
                 .attr('class', function(d, i){ return 'chanLine lineType'+(i%5); });

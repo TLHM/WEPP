@@ -2,13 +2,20 @@
 
 /**
   Responsible for loading and holding all the ERP data, as well as
-  switching between files, uploading to Redcap given the credentials, etc.
+  switching between files, holding project configuration, etc.
 */
 
 export default function erpDataContainer() {
     var data = {
         reader: new FileReader(),
         fileList: [],
+        confFil: {},
+        config: {
+            redcapURL: 'https://poa-redcap.med.yale.edu/api/',
+            redcapToken: '',
+            selectedChannels: [],
+            defaultWindows: [],
+        },
         curFileIndex : 0,
         curBinIndex: 0,
         curERP: {},
@@ -26,6 +33,11 @@ export default function erpDataContainer() {
 
         // loop through, only keep the .json files
         for(var i=0; i<flist.length; i++) {
+            if(flist[i].name === 'wepp_conf.json') {
+                data.confFile = flist[i];
+                continue;
+            }
+
             if(flist[i].name.endsWith('.json')) data.fileList.push(flist[i]);
         }
         // Sort it
@@ -34,6 +46,11 @@ export default function erpDataContainer() {
         // Default file and bin index
         data.curFileIndex = 0;
         data.curBinIndex = 0;
+
+        // Load config file if we have one
+        if(data.confFile) {
+            data.loadConfig(data.confFile);
+        }
 
         // Load first file, if there is one
         data.loadCurrentFile();
@@ -75,8 +92,63 @@ export default function erpDataContainer() {
             data.curBinIndex = data.curERP.bins.length-1;
         }
 
+        // Estimate the "important" channels, ie ones not named E##
+        // If there are none, pick the middle channel arbitrarily
+        if(data.config.selectedChannels.length != data.curERP.chans.length) {
+            var chanRegex = /E\d+/;
+            data.curERP.selectedChannels = data.curERP.chans.map(x => !chanRegex.test(x));
+            data.config.selectedChannels = data.curERP.selectedChannels;
+        } else {
+            data.curERP.selectedChannels = data.config.selectedChannels;
+        }
+
+        // Get our important channel names
+        data.curERP.selectedChanNames = data.curERP.chans.filter((d, ind) => data.config.selectedChannels[ind]);
+
         data.onNewERPFile(data.curERP);
-        data.onNewBin(data.curERP.bins[data.curBinIndex]);
+        data.onNewBin(data.curERP.bins[data.curBinIndex], data.curERP.selectedChannels);
+    };
+
+    // Loads a specified config file
+    data.loadConfig = function(confFile) {
+        var confReader = new FileReader();
+        confReader.onload = function(event){
+            data.config = JSON.parse(event.target.result);
+            data.onLoadConfig(data.config);
+        };
+        confReader.readAsText(confFile);
+    };
+
+    // Callback for when we load in a new configuration file
+    data.onLoadConfig = function(config) {
+        console.log('Loaded Config File');
+    };
+
+    // Function to update the config
+    data.setConfig = function(key, value) {
+        data.config[key] = value;
+    };
+
+    // Saves the config file (pops up dialog)
+    data.saveConfig = function() {
+        const confBlob = new Blob([JSON.stringify(data.config)], {type:'application/plsdl'});
+
+        // from https://stackoverflow.com/questions/8310657/how-to-create-a-dynamic-file-link-for-download-in-javascript
+        var dlink = document.createElement('a');
+        dlink.style.display = 'none';
+        dlink.download = 'wepp_conf.json';
+        //dlink.target='_blank';
+        dlink.href = window.URL.createObjectURL(confBlob);
+        dlink.onclick = function(e) {
+            // revokeObjectURL needs a delay to work properly
+            var that = this;
+            setTimeout(function() {
+                window.URL.revokeObjectURL(that.href);
+            }, 1500);
+        };
+        document.body.appendChild(dlink);
+        dlink.click();
+        dlink.remove();
     };
 
     // Callback that gets called when new ERP file is loaded
@@ -90,7 +162,7 @@ export default function erpDataContainer() {
     // Callback that gets called when the current bin is changed
     // Gets passed the data of the current bin
     // Also gets called when a new ERP file is loaded
-    data.onNewBin = function(bin) {
+    data.onNewBin = function(bin, selectedChannels) {
         console.log('Changed the current bin!');
         console.log(bin);
     };
@@ -105,7 +177,7 @@ export default function erpDataContainer() {
         if(index === data.curBinIndex) return;
 
         data.curBinIndex = index;
-        data.onNewBin(data.curERP.bins[data.curBinIndex]);
+        data.onNewBin(data.curERP.bins[data.curBinIndex], data.curERP.selectedChannels);
     };
 
     data.prevBin = function() {
@@ -115,7 +187,7 @@ export default function erpDataContainer() {
         } else {
             data.curBinIndex -= 1;
 
-            data.onNewBin(data.curERP.bins[data.curBinIndex]);
+            data.onNewBin(data.curERP.bins[data.curBinIndex], data.curERP.selectedChannels);
         }
     };
 
@@ -136,7 +208,7 @@ export default function erpDataContainer() {
         } else {
             data.curBinIndex += 1;
 
-            data.onNewBin(data.curERP.bins[data.curBinIndex]);
+            data.onNewBin(data.curERP.bins[data.curBinIndex], data.curERP.selectedChannels);
         }
     };
 
@@ -329,7 +401,7 @@ export default function erpDataContainer() {
     // Clears all the tempPeaks we had
     data.clearTempPeaks= function() {
         data.tempPeaks = [];
-    }
+    };
 
     // Gets our peaks as a JSON string for upload to redcap
     // Only returns those not yet uploaded

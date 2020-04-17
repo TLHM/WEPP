@@ -40,7 +40,14 @@ var mainPlot = erpPlot(plotDiv, margin, footerHeight);
 var rc = redcapComs(confDiv.append('div').attr('id','redConf'));
 var conf = createPlotConfig(confDiv, mainPlot);
 
-// Set some callbacks to link the data and the plot
+// Set some callbacks to link the data and the plot, etc.
+data.onLoadConfig = function(config) {
+  rcComs.urlInput.attr('value', config.redcapURL);
+  rcComs.tokenInput.attr('value', config.tokenURL);
+
+  console.log(rcComs);
+};
+
 data.onNewERPFile = function(erp) {
   mainPlot.updateERP(erp);
 
@@ -49,10 +56,10 @@ data.onNewERPFile = function(erp) {
   iPanel.selectBin(data.curBinIndex);
 };
 
-data.onNewBin = function(bin) {
+data.onNewBin = function(bin, selectedChannels) {
   data.clearPeaks();
 
-  mainPlot.showBinData(bin);
+  mainPlot.showBinData(bin, selectedChannels);
   mainPlot.showPeaks([],[]);
   mainPlot.highlightDefault();
 
@@ -95,6 +102,29 @@ rc.onQueueReady = function() {
   rc.sendPeaksToRedcap(data.getPeaksAsJSON());
 };
 
+rc.onChangeSettings = function() {
+  data.setConfig('redcapURL', rc.url);
+  data.setConfig('redcapToken', rc.token);
+};
+
+// Download button for the config
+var confDL = d3.select('body').append('button').attr('id', 'dlConfig')
+  .text('Save Configuration')
+  .on('click', function(){
+    data.saveConfig();
+  })
+  .attr('disabled', 'true');
+var loadConf = d3.select('body').append('input').attr('id', 'upConfig')
+  .attr('type',"file")
+  .attr('accept','.json')
+  .text('Load Configuration')
+  .on('change', function(){
+    var files = document.getElementById("selectDir").files;
+    if(files.length < 1) return;
+
+    data.loadConfig(files[0]);
+  });
+
 // Create our browser button
 // Make we get the files when they're chosen
 var fileIn = plotDiv.append('div')
@@ -110,7 +140,10 @@ var fileIn = plotDiv.append('div')
     data.loadList(document.getElementById("selectDir").files);
     iPanel.setFiles(data.fileList);
     iPanel.setBins(['test','one','two']);
+
+    confDL.attr('disabled',null);
   });
+
 
 // This is called on space bar
 var acceptAndNext = function() {
