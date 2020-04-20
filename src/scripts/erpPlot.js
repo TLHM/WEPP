@@ -13,24 +13,28 @@
 
 import * as d3 from 'd3';
 
-export default function erpPlot(parent, margin, footerHeight)
+export default function erpPlot(parent, margin)
 {
     // This is the object we'll return
-    var plot = {};
+    var plot = {
+        parent: parent
+    };
 
     // Header will show channels and their line types
-    plot.header = parent.append('div').attr('id','plotHeader');
-    plot.header.append('svg').attr('id','chanLabels');
+    //plot.header = parent.append('div').attr('id','plotHeader');
+    //plot.header.append('svg').attr('id','chanLabels');
 
     // Create a svg div to hold all the plottin' and visuals
     plot.svg = parent.append('svg').attr('id','plotSVG');
 
     plot.margin = margin;
+    plot.parentSize = plot.parent.node().getBoundingClientRect();
+    console.log(plot.parentSize);
 
     // w and h are for the full svg area
     // The usable plot area is this minus the margins
-    plot.w = window.innerWidth - 10;
-    plot.h = window.innerHeight - footerHeight - 10;
+    plot.w = plot.parentSize.width - 10;
+    plot.h = window.innerHeight*0.8 - 10;
 
     // Set width and height for our svg
     plot.svg.attr('width',plot.w).attr('height',plot.h);
@@ -126,7 +130,7 @@ export default function erpPlot(parent, margin, footerHeight)
         plot.y.domain(plot.yDomain);
 
         // Want ticks based on intervals of 100ms, 10µV
-        console.log(plot.getTicks(plot.xDomain[0],plot.xDomain[1],100));
+        //console.log(plot.getTicks(plot.xDomain[0],plot.xDomain[1],100));
         plot.xAxCall.scale(plot.x).tickValues(plot.getTicks(plot.xDomain[0],plot.xDomain[1],100));
         plot.yAxCall.scale(plot.y).tickValues(plot.getTicks(plot.yDomain[0],plot.yDomain[1],10));
 
@@ -164,6 +168,49 @@ export default function erpPlot(parent, margin, footerHeight)
         return Array(Math.ceil((stop - start) / step)+1).fill(start).map((x, i) => x + i * step);
     };
 
+    // Function to set our size properly given a parent div
+    plot.resize = function() {
+        //console.log('resizin');
+        plot.parentSize = plot.parent.node().getBoundingClientRect();
+
+        // update basic area, grid, axis, etc.
+        plot.w = plot.parentSize.width - 10;
+        plot.h = window.innerHeight*0.8 - 10;
+
+        plot.svg.attr('width',plot.w).attr('height',plot.h);
+
+        // grab old values of the for the hightlights before we update scale
+        var highlights = [
+            plot.x.invert(plot.bgRectPos.attr('x')),
+            plot.x.invert((+plot.bgRectPos.attr('x')) + (+plot.bgRectPos.attr('width'))),
+            plot.x.invert(plot.bgRectNeg.attr('x')),
+            plot.x.invert((+plot.bgRectNeg.attr('x')) + (+plot.bgRectNeg.attr('width'))),
+        ];
+
+        plot.x.range([0,plot.w-plot.margin.left-plot.margin.right]);
+        plot.y.range([plot.h-plot.margin.bottom-plot.margin.top,0]);
+
+        plot.xAxis.attr('transform','translate(0,'+(plot.h-plot.margin.bottom-plot.margin.top)+')');
+        plot.xGrid.attr('transform','translate(0,'+(plot.h-plot.margin.bottom-plot.margin.top)+')');
+
+        plot.xgCall.tickSize(-(plot.h-plot.margin.bottom-plot.margin.top));
+        plot.ygCall.tickSize(-(plot.w-plot.margin.left-plot.margin.right));
+
+        plot.updateAx();
+
+        // Update highlight boxes
+        plot.bgRectPos.attr('height', plot.h-plot.margin.bottom-plot.margin.top);
+        plot.bgRectNeg.attr('height', plot.h-plot.margin.bottom-plot.margin.top);
+        plot.bgRectPos
+            .attr('x', plot.x(highlights[0]))
+            .attr('width', plot.x(highlights[1]) - plot.x(highlights[0]));
+        plot.bgRectNeg
+            .attr('x', plot.x(highlights[2]))
+            .attr('width', plot.x(highlights[3]) - plot.x(highlights[2]));
+
+        // Peaks and ERP data are redrawn elsewhere
+    };
+
     // Set default plot axes, grid
     plot.updateAx();
 
@@ -196,7 +243,7 @@ export default function erpPlot(parent, margin, footerHeight)
     plot.updateERP = function(erp)
     {
         plot.curFileName = erp.fileName;
-        plot.header.select('#fileNameDisplay').text(erp.fileName);
+        //plot.header.select('#fileNameDisplay').text(erp.fileName);
 
         plot.curTimes = erp.times;
 
@@ -214,23 +261,23 @@ export default function erpPlot(parent, margin, footerHeight)
         //     showChans = [];
         // }
         //console.log(showChans);
-        var labels = plot.header.select('#chanLabels').selectAll('g')
-            .data(showChans)
-            .join('g')
-                .attr('id','chanLabel');
-        labels.append('line')
-                .attr('x1', function(d,i){ return 10 + 120*i; })
-                .attr('x2', function(d,i){ return 40 + 120*i; })
-                .attr('y1', function(d,i){ return 65; })
-                .attr('y2', function(d,i){ return 65; })
-                .attr('class', function(d, i){ return 'chanLine lineType'+(i%5); });
-        labels.append('text')
-                .attr("font-family", "sans-serif")
-                .attr("font-size", 10)
-                .attr("text-anchor", "left")
-                .attr("y", 68)
-                .attr("x", function(d,i){ return 45 + 120*i; })
-                .text(function(d){ return d.substring(0,Math.min(d.length,15)); });
+        // var labels = plot.header.select('#chanLabels').selectAll('g')
+        //     .data(showChans)
+        //     .join('g')
+        //         .attr('id','chanLabel');
+        // labels.append('line')
+        //         .attr('x1', function(d,i){ return 10 + 120*i; })
+        //         .attr('x2', function(d,i){ return 40 + 120*i; })
+        //         .attr('y1', function(d,i){ return 65; })
+        //         .attr('y2', function(d,i){ return 65; })
+        //         .attr('class', function(d, i){ return 'chanLine lineType'+(i%5); });
+        // labels.append('text')
+        //         .attr("font-family", "sans-serif")
+        //         .attr("font-size", 10)
+        //         .attr("text-anchor", "left")
+        //         .attr("y", 68)
+        //         .attr("x", function(d,i){ return 45 + 120*i; })
+        //         .text(function(d){ return d.substring(0,Math.min(d.length,15)); });
 
     };
 
@@ -240,7 +287,7 @@ export default function erpPlot(parent, margin, footerHeight)
         //console.log(bin);
 
         // Update display of bin
-        plot.header.select('#binDisplay').text(bin.name);
+        //plot.header.select('#binDisplay').text(bin.name);
 
         // Plot our butterfly lines
         console.log(bin.data.filter((d, ind) => selectedChannels[ind]));

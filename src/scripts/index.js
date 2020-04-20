@@ -18,11 +18,17 @@ d3.select('body').select('#noScript').style('display','None');
 var data = erpDataContainer();
 
 // Margins for our plot, also we want some footer space
-var footerHeight = 100;
-var margin = {top: 10, right: 50, bottom: 30, left: 50};
+var margin = {top: 10, right: 25, bottom: 30, left: 50};
+
+// Make holder for plot and the info panel to the right
+var plotAndInfo = d3.select('body').append('div').attr('id','plotAndInfo')
+  .style('display', 'flex');
+var plotDiv = plotAndInfo.append('div').attr('id','plotContainer')
+  .style('width', '75%');
+var confDiv = d3.select('body').append('div').attr('id','configContainer');
 
 // Make our info panel
-var iPanel = erpInfoPanel(d3.select('body').append('div').attr('id','infoPanel'));
+var iPanel = erpInfoPanel(plotAndInfo.append('div').attr('id','infoPanel'));
 iPanel.onFileSel(function(){
   data.selectFile(+d3.event.target.value);
 });
@@ -31,14 +37,21 @@ iPanel.onBinSel(function(){
 });
 
 // Create the svg element that will hold the fancy D3 plot
-var plotDiv = d3.select('body').append('div').attr('id','plotContainer');
 d3.select('body').append('h2').attr('id','confTitle').text('Configuration: ');
-var confDiv = d3.select('body').append('div').attr('id','configContainer');
 
 // Create some of our objects with their divs
-var mainPlot = erpPlot(plotDiv, margin, footerHeight);
+var mainPlot = erpPlot(plotDiv, margin);
 var rc = redcapComs(confDiv.append('div').attr('id','redConf'));
 var conf = createPlotConfig(confDiv, mainPlot);
+
+// Make sure our plot resizes
+window.addEventListener("resize", function(){
+  mainPlot.resize();
+
+  // Redraw our data
+  mainPlot.showBinData(data.getCurBinData(), data.getSelectedChans());
+  mainPlot.showPeaks(data.getPickedPeaks(), data.getPickedPeaks(false));
+});
 
 // Set some callbacks to link the data and the plot, etc.
 data.onLoadConfig = function(config) {
@@ -71,11 +84,7 @@ mainPlot.onHighlight = function(timeRange, polarity) {
   data.clearTempPeaks();
 
   // Loop through all picked channels, pick peaks
-  for(var i=0; i<mainPlot.pickChans.length; i++) {
-    if(!mainPlot.pickChans[i]) continue;
-
-    data.calcPeak(polarity, timeRange, i);
-  }
+  data.calcPeaks(polarity, timeRange);
 
   // Display peaks
   mainPlot.showPeaks(data.getPickedPeaks(), data.getPickedPeaks(false));

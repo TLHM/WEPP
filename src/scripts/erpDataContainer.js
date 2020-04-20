@@ -374,6 +374,15 @@ export default function erpDataContainer() {
         return peak;
     };
 
+    // For picking peaks in all picked channels
+    data.calcPeaks = function(peakType, timeRange) {
+        for(var i=0; i < data.curERP.selectedChannels.length; i++) {
+            if(!data.curERP.selectedChannels[i]) continue;
+
+            data.calcPeak(peakType, timeRange, i);
+        }
+    };
+
     // Moves current temp peaks into picked peaks, barring duplicates
     data.keepTempPeaks = function() {
         var j;
@@ -415,6 +424,14 @@ export default function erpDataContainer() {
     data.getPickedPeaks = function(positive=true) {
         const temps = data.tempPeaks.filter(p => p.peakpolarity==(positive ? 1 : 2));
         return data.pickedPeaks.filter(p => p.peakpolarity==(positive ? 1 : 2)).concat(temps);
+    };
+
+    data.getSelectedChans = function(){
+        return data.curERP.selectedChannels;
+    };
+
+    data.getCurBinData = function(){
+        return data.curERP.bins[data.curBinIndex];
     };
 
     return data;
