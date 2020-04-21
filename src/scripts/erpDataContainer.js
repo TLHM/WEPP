@@ -244,7 +244,7 @@ export default function erpDataContainer() {
     // Has callback for sending to elsewhere as well
     // Our peak archive is a list of files, each files holding their bins,
     // each bin having its peaks
-    data.savePeaks = function() {
+    data.savePeaks = function(notes) {
         // Make sure we have a file array
         while(data.peakArchive.length < data.curFileIndex) data.peakArchive.push([]);
         if(data.peakArchive.length===data.curFileIndex) data.peakArchive.push([]);
@@ -263,15 +263,18 @@ export default function erpDataContainer() {
 
     // Updates the notes field for all current picked peaks
     data.updateNotes = function(newNotes) {
+        console.log(newNotes);
         for(var i=0; i<data.pickedPeaks.length; i++) {
             data.pickedPeaks[i].notes = newNotes;
         }
+        console.log(data.pickedPeaks);
     };
 
     // Callback for when peaks are saved
     // Accepts an array of the peaks that were saved
     data.onSave = function(savedPeaks) {
         console.log('Peaks were saved');
+        console.log(savedPeaks);
     };
 
     // Updates our record of which peaks we've uploaded

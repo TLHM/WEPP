@@ -140,6 +140,7 @@ body{
   background-color: rgb(197, 205, 205);
   border: 1px solid black;
   flex-grow: 1;
+  margin-right: 5px;
 }
 
 #progressLabel {
@@ -148,10 +149,19 @@ body{
   text-align: right;
   margin-top: auto;
   margin-right: 3px;
-
 }
 
 #progressBar {
   height: 100%;
   background-color: rgb(67, 124, 252);
+}
+
+#notesTitle {
+  margin-left: 10px;
+}
+
+#notesBox {
+  margin: 5px 10px;
+  width: 90%;
+  resize: none;
 }

@@ -169,5 +169,18 @@ export default function erpInfoPanel(selection) {
     }
   };
 
+
+  // Notes Per bin
+  panel.selection.append('div').attr('id','notesTitle')
+    .text('Notes:')
+    .attr('class','configPrompt');
+  panel.notesInput = panel.selection.append('textarea')
+    .attr('id', 'notesBox')
+    .attr('rows','3');
+
+  panel.getNotes = function() {
+    return panel.notesInput.property('value');
+  };
+
   return panel;
 }

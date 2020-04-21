@@ -174,7 +174,8 @@ export default function erpPlot(parent, margin)
         plot.parentSize = plot.parent.node().getBoundingClientRect();
 
         // update basic area, grid, axis, etc.
-        plot.w = plot.parentSize.width - 10;
+        //plot.w = plot.parentSize.width - 10; // Issue with left panel, causing shrink
+        plot.w = window.innerWidth - 320;
         plot.h = window.innerHeight*0.8 - 10;
 
         plot.svg.attr('width',plot.w).attr('height',plot.h);

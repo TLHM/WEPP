@@ -180,7 +180,11 @@ var fileIn = plotDiv.append('div')
 
 // This is called on space bar
 var acceptAndNext = function() {
+  // Grab our notes
+  var notes = iPanel.getNotes();
+
   // Accept / save our peaks
+  data.updateNotes(notes);
   data.savePeaks();
 
   // If we aren't already pending, send our peaks to redCap
