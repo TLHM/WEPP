@@ -170,6 +170,7 @@ var fileIn = plotDiv.append('div')
   .attr('multiple','true')
   .on('change',function(){
     console.log("loading Files");
+    console.log(document.getElementById("selectDir").files);
     data.loadList(document.getElementById("selectDir").files);
     iPanel.setFiles(data.fileList);
     iPanel.setBins(['test','one','two']);

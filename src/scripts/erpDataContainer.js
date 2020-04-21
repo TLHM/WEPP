@@ -79,7 +79,7 @@ export default function erpDataContainer() {
 
         // Make sure we're in range
         if(i < 0 || i >= data.fileList.length) return;
-
+        console.log(data.fileList[i]);
         // Ask our file read to read it in
         data.reader.readAsText(data.fileList[i]);
         data.curFileName = data.fileList[i].name;
@@ -87,8 +87,13 @@ export default function erpDataContainer() {
 
     // Function that runs once a file is loaded
     data.reader.onload = function(event) {
-        // Get our data into a json object
-        data.curERP = JSON.parse(event.target.result);
+        // Get our data into a json object & load!
+
+        data.loadJSON(JSON.parse(event.target.result));
+    };
+
+    data.loadJSON = function(jsonData, name) {
+        data.curERP = jsonData;
         data.curERP.fileName = data.curFileName;
 
         // If we haven't selected bins, select them all
