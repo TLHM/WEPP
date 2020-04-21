@@ -31,7 +31,10 @@ module.exports = {
       {
         test: /\.css$/,
         use: [
-          MiniCssExtractPlugin.loader,
+          {
+            loader:'style-loader',
+            options:{injectType:'singletonStyleTag'}
+          },
           'css-loader'
         ]
       },

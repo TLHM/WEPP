@@ -46,7 +46,11 @@ body{
   fill: none;
 }
 
-#plotHeader {
+#infoPanel {
+  width: 300px;
+}
+
+#plotAndInfo {
   display: flex;
 }
 
@@ -54,19 +58,20 @@ body{
   width: 40%;
 }
 
-#chanLabels {
-  flex: 1;
-  height: 80px;
-}
-
-#fileNameDisplay {
-  margin: 15px 50px 10px;
-  font: 1.2em sans-serif;
-}
-
-#binDisplay {
-  margin: 10px 50px 10px;
+#chanLabel {
   font: .9em sans-serif;
+  text-align: center;
+  margin: 0px 20px 10px;
+}
+
+#fileNameSelect {
+  margin: 10px 0px 5px;
+  font: .7em sans-serif;
+}
+
+#binSelect {
+  margin: 0px 0px 10px;
+  font: .7em sans-serif;
 }
 
 #fileIn {
@@ -128,4 +133,25 @@ body{
 .twSpacer {
   margin: 0px 10px;
   display: inline;
+}
+
+#progressBG {
+  height: 10px;
+  background-color: rgb(197, 205, 205);
+  border: 1px solid black;
+  flex-grow: 1;
+}
+
+#progressLabel {
+  width: 40px;
+  font: .8em monospace;
+  text-align: right;
+  margin-top: auto;
+  margin-right: 3px;
+
+}
+
+#progressBar {
+  height: 100%;
+  background-color: rgb(67, 124, 252);
 }

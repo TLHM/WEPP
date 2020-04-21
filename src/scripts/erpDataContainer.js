@@ -9,12 +9,15 @@ export default function erpDataContainer() {
     var data = {
         reader: new FileReader(),
         fileList: [],
+        listProgress: 0,
         confFil: {},
         config: {
             redcapURL: 'https://poa-redcap.med.yale.edu/api/',
             redcapToken: '',
             selectedChannels: [],
             defaultWindows: [],
+            selectedBins: [],
+            selectedBinCount: [],
         },
         curFileIndex : 0,
         curBinIndex: 0,
@@ -30,6 +33,7 @@ export default function erpDataContainer() {
     // Saves the list for further use, loads first file (if there is one)
     data.loadList = function(flist) {
         data.fileList = [];
+        data.listProgress = 0;
 
         // loop through, only keep the .json files
         for(var i=0; i<flist.length; i++) {
@@ -87,6 +91,12 @@ export default function erpDataContainer() {
         data.curERP = JSON.parse(event.target.result);
         data.curERP.fileName = data.curFileName;
 
+        // If we haven't selected bins, select them all
+        if(data.config.selectedBins.length === 0) {
+            data.config.selectedBins = data.curERP.bins.map((d,i) => true);
+            data.config.selectedBinCount = data.config.selectedBins.length;
+        }
+
         // Set current bin if necessary
         if(data.curBinIndex < 0) {
             data.curBinIndex = data.curERP.bins.length-1;
@@ -107,6 +117,8 @@ export default function erpDataContainer() {
 
         data.onNewERPFile(data.curERP);
         data.onNewBin(data.curERP.bins[data.curBinIndex], data.curERP.selectedChannels);
+
+        data.onChanSelect(data.curERP.selectedChannels, data.curERP.chans, data.curERP.chanlocs);
     };
 
     // Loads a specified config file
@@ -230,8 +242,22 @@ export default function erpDataContainer() {
 
     // Pushes our current picked peaks into the archive
     // Has callback for sending to elsewhere as well
+    // Our peak archive is a list of files, each files holding their bins,
+    // each bin having its peaks
     data.savePeaks = function() {
-        data.peakArchive = data.peakArchive.concat(data.pickedPeaks);
+        // Make sure we have a file array
+        while(data.peakArchive.length < data.curFileIndex) data.peakArchive.push([]);
+        if(data.peakArchive.length===data.curFileIndex) data.peakArchive.push([]);
+
+        // Make sure it has the right amount of bins
+        while(data.peakArchive[data.curFileIndex].length < data.curERP.bins.length)
+            data.peakArchive[data.curFileIndex].push([]);
+
+        // Finally, update our current bin
+        if(data.peakArchive[data.curFileIndex][data.curBinIndex].length === 0)
+            data.listProgress += 1/data.config.selectedBinCount;
+        data.peakArchive[data.curFileIndex][data.curBinIndex] = data.pickedPeaks;
+
         data.onSave(data.pickedPeaks);
     };
 
@@ -249,8 +275,11 @@ export default function erpDataContainer() {
     };
 
     // Updates our record of which peaks we've uploaded
+    // Want our count to be of files, which is hard to do this way
+    // so, we'll do it a bit more jankily
     data.markUploaded = function(count) {
-        data.uploadedCount += count;
+        if(count <= 0) return;
+        data.uploadedCount = data.uploading;
     };
 
     /**
@@ -416,7 +445,14 @@ export default function erpDataContainer() {
     // Only returns those not yet uploaded
     data.getPeaksAsJSON = function()
     {
-        return JSON.stringify(data.peakArchive.slice(data.uploadedCount), (",",":"));
+        if(data.uploadedCount >= data.peakArchive.length) return "[]";
+        var ourPeaks = data.peakArchive.slice(data.uploadedCount);
+        var arrayToSend = [];
+        for(var i=0; i<ourPeaks.length; i++) {
+            arrayToSend = arrayToSend.concat(ourPeaks[i].reduce((a,b)=>a.concat(b)));
+        }
+        data.uploading = data.peakArchive.length;
+        return JSON.stringify(arrayToSend, (",",":"));
     };
 
     // Returns out pos and neg peaks
@@ -426,12 +462,39 @@ export default function erpDataContainer() {
         return data.pickedPeaks.filter(p => p.peakpolarity==(positive ? 1 : 2)).concat(temps);
     };
 
+    data.getProgress = function() {
+        return data.listProgress / data.fileList.length;
+    };
+
     data.getSelectedChans = function(){
         return data.curERP.selectedChannels;
     };
 
+    // Returns index of channel with respect its class (selected or not)
+    data.getSelLoc = function(index){
+        return {
+            sel: data.curERP.selectedChannels[index],
+            index: data.curERP.chans.map((d,i) => i)
+                .filter((d,i) => data.curERP.selectedChannels[i] == data.curERP.selectedChannels[index])
+                .indexOf(index)
+        };
+    };
+
     data.getCurBinData = function(){
         return data.curERP.bins[data.curBinIndex];
+    };
+
+    // Selecting channels
+    data.toggleChannel = function(chIndex) {
+        //console.log(chIndex);
+        if(chIndex < 0 || chIndex >= data.curERP.chans.length) return;
+
+        data.curERP.selectedChannels[chIndex] = !data.curERP.selectedChannels[chIndex];
+        data.onChanSelect(data.curERP.selectedChannels, data.curERP.chans, data.curERP.chanlocs);
+    };
+
+    data.onChanSelect = function(sel, names, locs) {
+        console.log('Changed the selected channels!');
     };
 
     return data;

@@ -23,8 +23,7 @@ var margin = {top: 10, right: 25, bottom: 30, left: 50};
 // Make holder for plot and the info panel to the right
 var plotAndInfo = d3.select('body').append('div').attr('id','plotAndInfo')
   .style('display', 'flex');
-var plotDiv = plotAndInfo.append('div').attr('id','plotContainer')
-  .style('width', '75%');
+var plotDiv = plotAndInfo.append('div').attr('id','plotContainer');
 var confDiv = d3.select('body').append('div').attr('id','configContainer');
 
 // Make our info panel
@@ -49,8 +48,10 @@ window.addEventListener("resize", function(){
   mainPlot.resize();
 
   // Redraw our data
-  mainPlot.showBinData(data.getCurBinData(), data.getSelectedChans());
-  mainPlot.showPeaks(data.getPickedPeaks(), data.getPickedPeaks(false));
+  if(data.curERP.bins){
+    mainPlot.showBinData(data.getCurBinData(), data.getSelectedChans());
+    mainPlot.showPeaks(data.getPickedPeaks(), data.getPickedPeaks(false));
+  }
 });
 
 // Set some callbacks to link the data and the plot, etc.
@@ -79,6 +80,13 @@ data.onNewBin = function(bin, selectedChannels) {
   iPanel.selectBin(data.curBinIndex);
 };
 
+data.onChanSelect = function(sel, names, locs) {
+  iPanel.displayChannels(sel, names, locs);
+
+  // Redraw our bin data
+  mainPlot.showBinData(data.getCurBinData(), sel);
+};
+
 mainPlot.onHighlight = function(timeRange, polarity) {
   // Only want one set of peaks from this highlight
   data.clearTempPeaks();
@@ -88,6 +96,22 @@ mainPlot.onHighlight = function(timeRange, polarity) {
 
   // Display peaks
   mainPlot.showPeaks(data.getPickedPeaks(), data.getPickedPeaks(false));
+};
+
+iPanel.onHover = function(chanIndex) {
+  // Got to translate it into index for selected or non-selected
+  var selLoc = data.getSelLoc(chanIndex);
+  mainPlot.hoverChannel(selLoc);
+};
+
+iPanel.onExitHover = function(chanIndex) {
+  // Got to translate it into index for selected or non-selected
+  mainPlot.endHoverChannel();
+};
+
+iPanel.onClick = function(name, chanIndex) {
+  mainPlot.endHoverChannel();
+  data.toggleChannel(chanIndex);
 };
 
 // We've ended our highlight dragging, keep the peaks we have
@@ -164,6 +188,9 @@ var acceptAndNext = function() {
 
   // move on
   data.nextBin();
+
+  // Update our progress bar
+  iPanel.setProgress(data.getProgress());
 };
 
 // Add some button press functionality
@@ -180,8 +207,9 @@ d3.select('body')
       data.nextBin();
     }
     // Space Bar (accept + continue)
-    else if(d3.event.keyCode == 32)
+    else if(d3.event.keyCode == 32 && d3.event.target == document.body)
     {
       acceptAndNext();
+      d3.event.preventDefault();
     }
   });

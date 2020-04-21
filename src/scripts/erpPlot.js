@@ -290,7 +290,7 @@ export default function erpPlot(parent, margin)
         //plot.header.select('#binDisplay').text(bin.name);
 
         // Plot our butterfly lines
-        console.log(bin.data.filter((d, ind) => selectedChannels[ind]));
+        //console.log(bin.data.filter((d, ind) => selectedChannels[ind]));
         plot.bgLines.selectAll("path")
             .data(bin.data.filter((d, ind) => !selectedChannels[ind]))
             .join("path")
@@ -449,6 +449,24 @@ export default function erpPlot(parent, margin)
                 .attr("cy", function(d){ return plot.y(d.amplitude); })
                 .attr("r", 5)
                 .attr('class','negPeak');
+    };
+
+    // Highlight channels temporarily
+    plot.curSel = {sel:false, index:0};
+    plot.hoverChannel = function(selLoc) {
+        if(selLoc.sel){
+            plot.curSel = plot.lines.selectAll("path").nodes()[selLoc.index];
+        }else{
+            plot.curSel = plot.bgLines.selectAll("path").nodes()[selLoc.index];
+        }
+        d3.select(plot.curSel).style('stroke','orange')
+            .style('stroke-width', 2)
+            .style('opacity', 1);
+    };
+    plot.endHoverChannel = function() {
+        d3.select(plot.curSel).style('stroke',null)
+            .style('stroke-width', null)
+            .style('opacity', null);
     };
 
 
