@@ -25,6 +25,7 @@
 // Cypress.Commands.overwrite("visit", (originalFn, url, options) => { ... })
 import 'cypress-file-upload';
 
+// from https://github.com/abramenal/cypress-file-upload/issues/175
 Cypress.Commands.add(
     "addJSONFile",
     {

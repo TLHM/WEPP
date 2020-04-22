@@ -165,3 +165,7 @@ body{
   width: 90%;
   resize: none;
 }
+
+#chanLabel {
+  height:20px;
+}
