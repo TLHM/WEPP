@@ -158,8 +158,24 @@ var loadConf = d3.select('body').append('input').attr('id', 'upConfig')
     data.loadConfig(files[0]);
   });
 
-// Create our browser button
-// Make we get the files when they're chosen
+// Download button for the peaks
+var peakDL = d3.select('body').append('button').attr('id', 'dlPeaks')
+  .text('Export Picked Peaks')
+  .on('click', function(){
+    data.exportToCSV();
+  })
+  .attr('disabled', 'true');
+
+data.onGetPeaks = function(){
+  peakDL.attr('disabled', null);
+};
+
+data.onEmptyPeaks = function(){
+  peakDL.attr('disabled', 'true');
+};
+
+// Create our file browser button
+// Make sure we get the files when they're chosen
 var fileIn = plotDiv.append('div')
   .attr('id','fileIn')
   .append('input')

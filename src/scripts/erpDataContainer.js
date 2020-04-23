@@ -150,12 +150,16 @@ export default function erpDataContainer() {
     data.saveConfig = function() {
         const confBlob = new Blob([JSON.stringify(data.config)], {type:'application/plsdl'});
 
+        data.downloadBlob(confBlob, 'wepp_conf.json');
+    };
+
+    data.downloadBlob = function(blob, suggestedName='') {
         // from https://stackoverflow.com/questions/8310657/how-to-create-a-dynamic-file-link-for-download-in-javascript
         var dlink = document.createElement('a');
         dlink.style.display = 'none';
-        dlink.download = 'wepp_conf.json';
+        if(suggestedName.length>0) dlink.download = suggestedName;
         //dlink.target='_blank';
-        dlink.href = window.URL.createObjectURL(confBlob);
+        dlink.href = window.URL.createObjectURL(blob);
         dlink.onclick = function(e) {
             // revokeObjectURL needs a delay to work properly
             var that = this;
@@ -300,8 +304,9 @@ export default function erpDataContainer() {
             peakType should be 1 for positive, 2 for negative
             timeRange should be in ms
             channel should be the index of the channel
+            curRoundInd is the offset for our current highlight
     */
-    data.calcPeak = function(peakType, timeRange, channel)
+    data.calcPeak = function(peakType, timeRange, channel, curRoundInd=0)
     {
         var chanData = data.curERP.bins[data.curBinIndex].data[channel];
         const t = data.curERP.times;
@@ -395,7 +400,7 @@ export default function erpDataContainer() {
         // Construct our peak object, push it into our picked peaks
         const now = new Date(Date.now());
         var peak = {
-            record_id: data.peakIndexCounter,
+            record_id: data.peakIndexCounter + curRoundInd,
             filename: data.curFileName,
             peakpolarity: peakType,
             latency: peakLats[0],
@@ -406,17 +411,19 @@ export default function erpDataContainer() {
             notes: "",
         };
         data.tempPeaks.push(peak);
-        data.peakIndexCounter += 1;
+        //data.peakIndexCounter += 1; -> moved to saveTempPeaks
 
         return peak;
     };
 
     // For picking peaks in all picked channels
     data.calcPeaks = function(peakType, timeRange) {
+        count = 0;
         for(var i=0; i < data.curERP.selectedChannels.length; i++) {
             if(!data.curERP.selectedChannels[i]) continue;
 
-            data.calcPeak(peakType, timeRange, i);
+            data.calcPeak(peakType, timeRange, i, count);
+            count += 1;
         }
     };
 
@@ -438,10 +445,22 @@ export default function erpDataContainer() {
 
             if(!duplicate) {
                 data.pickedPeaks.push(data.tempPeaks[i]);
+                data.peakIndexCounter += 1;
             }
         }
 
         data.clearTempPeaks();
+        data.onGetPeaks();
+    };
+
+    // Callbacks for disabling / enabling the peak export button
+    // This kind of hting is where vue / react are much nicer to use
+    data.onGetPeaks = function() {
+
+    };
+
+    data.onEmptyPeaks = function() {
+
     };
 
     // Clears all the tempPeaks we had
@@ -468,6 +487,29 @@ export default function erpDataContainer() {
     data.getPickedPeaks = function(positive=true) {
         const temps = data.tempPeaks.filter(p => p.peakpolarity==(positive ? 1 : 2));
         return data.pickedPeaks.filter(p => p.peakpolarity==(positive ? 1 : 2)).concat(temps);
+    };
+
+    // Exports peak archive + current picked peaks to a csv string for download
+    data.exportToCSV = function() {
+        // Grab all the archived peaks
+        var arrayToSend = [];
+        for(var i=0; i<data.peakArchive.length; i++) {
+            arrayToSend = arrayToSend.concat(data.peakArchive[i].reduce((a,b)=>a.concat(b)));
+        }
+
+        // Add current peaks
+        arrayToSend = arrayToSend.concat(data.pickedPeaks);
+
+        // transform into csv
+        // pulled from https://stackoverflow.com/questions/8847766/how-to-convert-json-to-csv-format-and-store-in-a-variable
+        const replacer = (key, value) => value === null ? '' : value; // specify how you want to handle null values here
+        const header = Object.keys(arrayToSend[0]);
+        let csv = arrayToSend.map(row => header.map(fieldName => JSON.stringify(row[fieldName], replacer)).join(','));
+        csv.unshift(header.join(','));
+        csv = csv.join('\r\n');
+
+        const csvBlob = new Blob([csv], {type:'txt/csv'});
+        data.downloadBlob(csvBlob, 'peaks.csv');
     };
 
     data.getProgress = function() {
