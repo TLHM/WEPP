@@ -418,7 +418,7 @@ export default function erpDataContainer() {
 
     // For picking peaks in all picked channels
     data.calcPeaks = function(peakType, timeRange) {
-        count = 0;
+        var count = 0;
         for(var i=0; i < data.curERP.selectedChannels.length; i++) {
             if(!data.curERP.selectedChannels[i]) continue;
 
