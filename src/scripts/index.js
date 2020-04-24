@@ -1,5 +1,6 @@
 /*jshint esversion: 6 */
 
+import * as gremlins from 'gremlins.js';
 import * as d3 from 'd3';
 import erpPlot from './erpPlot.js';
 import createPlotConfig from './plotConfig.js';
@@ -218,12 +219,16 @@ var acceptAndNext = function() {
   iPanel.setProgress(data.getProgress());
 };
 
+// Our gremlins
+var horde = gremlins.createHorde();
+var lastG = 0; // for double button press
+
 // Add some button press functionality
 d3.select('body')
   .on('keydown', function() {
     // Don't pick up inputs to text boxes
     if(d3.event.target != document.body) return;
-    //console.log(d3.event.keyCode);
+    console.log(d3.event.keyCode);
 
     // Left Arrow
     if(d3.event.keyCode == 37){
@@ -233,10 +238,20 @@ d3.select('body')
     } else if(d3.event.keyCode == 39) {
       data.nextBin();
     }
+
     // Space Bar (accept + continue)
     else if(d3.event.keyCode == 32)
     {
       acceptAndNext();
       d3.event.preventDefault();
+    }
+
+    // g key, for testing gremlins
+    else if(d3.event.keyCode == 71)
+    {
+      if(Date.now() - lastG < 1000){
+        horde.unleash();
+      }
+      lastG = Date.now();
     }
   });

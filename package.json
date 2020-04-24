@@ -50,6 +50,7 @@
     "webpack-merge": "^4.2.2"
   },
   "dependencies": {
-    "d3": "^5.15.1"
+    "d3": "^5.15.1",
+    "gremlins.js": "^2.1.0"
   }
 }
