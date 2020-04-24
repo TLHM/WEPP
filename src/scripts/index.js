@@ -36,8 +36,8 @@ iPanel.onBinSel(function(){
   data.selectBin(+d3.event.target.value);
 });
 
-// Create the svg element that will hold the fancy D3 plot
-d3.select('body').append('h2').attr('id','confTitle').text('Configuration: ');
+// Create the config div
+confDiv.append('h2').attr('id','confTitle').text('Configuration: ');
 
 // Create some of our objects with their divs
 var mainPlot = erpPlot(plotDiv, margin);
@@ -146,13 +146,13 @@ rc.onChangeSettings = function() {
 };
 
 // Download button for the config
-var confDL = d3.select('body').append('button').attr('id', 'dlConfig')
+var confDL = confDiv.append('button').attr('id', 'dlConfig')
   .text('Save Configuration')
   .on('click', function(){
     data.saveConfig();
   })
   .attr('disabled', 'true');
-var loadConf = d3.select('body').append('input').attr('id', 'upConfig')
+var loadConf = confDiv.append('input').attr('id', 'upConfig')
   .attr('type',"file")
   .attr('accept','.json')
   .text('Load Configuration')
@@ -164,7 +164,7 @@ var loadConf = d3.select('body').append('input').attr('id', 'upConfig')
   });
 
 // Download button for the peaks
-var peakDL = d3.select('body').append('button').attr('id', 'dlPeaks')
+var peakDL = confDiv.append('button').attr('id', 'dlPeaks')
   .text('Export Picked Peaks')
   .on('click', function(){
     data.exportToCSV();
