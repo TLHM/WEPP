@@ -83,3 +83,8 @@ Once you've gotten your tests written, you'll have to run them! Note that since 
 To run cypress, go to the project directory and use the command `npx cypress open`.
 
 There will be a GUI window that opens, and you can select your spec file from the file list, and it'll run it's tests.
+
+### Monkey Testing
+You can do monkey testing with gremlins.js, to see how random input affects the app. This can be done by pressing `g` twice in rapid succession on the app page.
+
+Note the at the moment, the gremlins break thanks to a bug in the gremlins code. If you manually edit the html to not include any `<input type="number>` elements, it will work as intended. Bug has been reported and will hopefully be fixed relatively soon.
