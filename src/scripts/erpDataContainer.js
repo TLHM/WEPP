@@ -247,6 +247,15 @@ export default function erpDataContainer() {
     // call savePeaks
     data.clearPeaks = function() {
         data.pickedPeaks = [];
+        data.clearTempPeaks();
+    };
+
+    // Reloads saved peaks if they're there
+    data.checkForOldPeaks = function() {
+        if(data.peakArchive.length > data.curFileIndex &&
+            data.peakArchive[data.curFileIndex].length > data.curBinIndex) {
+            data.pickedPeaks = data.peakArchive[data.curFileIndex][data.curBinIndex];
+        }
     };
 
     // Pushes our current picked peaks into the archive

@@ -418,6 +418,10 @@ export default function erpPlot(parent, margin)
         plot.bgRectPos.attr('width','0');
         plot.bgRectNeg.attr('width','0');
 
+        // Only highlight if we don't have peaks already displayed
+        if(plot.posPeaks.selectAll('circle').size() > 0 ||
+            plot.negPeaks.selectAll('circle').size() > 0) return;
+
         // Loop through and highlight each default window
         for(var i=0; i<plot.defaultTimeWindows.length; i++)
         {
@@ -425,6 +429,7 @@ export default function erpPlot(parent, margin)
             plot.clickType = plot.defaultTimeWindows[i].type == 'pos' ? 1 : 2;
 
             plot.highlight();
+            plot.onDragEnd();
         }
     };
 

@@ -72,9 +72,13 @@ data.onNewERPFile = function(erp) {
 
 data.onNewBin = function(bin, selectedChannels) {
   data.clearPeaks();
+  data.checkForOldPeaks();
+  console.log(data.pickedPeaks);
+  console.log(data.getPickedPeaks());
+  console.log(data.getPickedPeaks(false));
 
   mainPlot.showBinData(bin, selectedChannels);
-  mainPlot.showPeaks([],[]);
+  mainPlot.showPeaks(data.getPickedPeaks(), data.getPickedPeaks(false));
   mainPlot.highlightDefault();
 
   iPanel.selectBin(data.curBinIndex);
@@ -189,7 +193,7 @@ var fileIn = plotDiv.append('div')
     console.log(document.getElementById("selectDir").files);
     data.loadList(document.getElementById("selectDir").files);
     iPanel.setFiles(data.fileList);
-    iPanel.setBins(['test','one','two']);
+    //iPanel.setBins(['test','one','two']);
 
     confDL.attr('disabled',null);
   });
@@ -217,7 +221,9 @@ var acceptAndNext = function() {
 // Add some button press functionality
 d3.select('body')
   .on('keydown', function() {
-    console.log(d3.event.keyCode);
+    // Don't pick up inputs to text boxes
+    if(d3.event.target != document.body) return;
+    //console.log(d3.event.keyCode);
 
     // Left Arrow
     if(d3.event.keyCode == 37){
@@ -228,7 +234,7 @@ d3.select('body')
       data.nextBin();
     }
     // Space Bar (accept + continue)
-    else if(d3.event.keyCode == 32 && d3.event.target == document.body)
+    else if(d3.event.keyCode == 32)
     {
       acceptAndNext();
       d3.event.preventDefault();

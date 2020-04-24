@@ -127,4 +127,57 @@ context('singleFileLoading', () => {
           .and('not.equal', origPath);
       });
   });
+
+  it('Switches to next bin via keypress', () => {
+    cy.get('#binSelect option')
+      .should('have.length', 3);
+
+    cy.get('#chanLines path')
+      .first()
+      .then(($line) => {
+        const origPath = $line.attr('d');
+
+        cy.get('body')
+          .type('{rightArrow}');
+
+        cy.get('#chanLines path')
+          .first()
+          .should('have.attr','d')
+          .and('not.equal', origPath);
+
+        cy.get('#binSelect')
+          .should('have.value', '1');
+      });
+  });
+
+  it('Switches to prev bin via keypress', () => {
+    cy.get('#binSelect option')
+      .should('have.length', 3);
+
+    cy.get('#binSelect')
+      .select('Fixation');
+
+    cy.get('#binSelect')
+      .should('have.value', '2');
+
+    cy.get('#chanLines path')
+      .first()
+      .then(($line) => {
+        const origPath = $line.attr('d');
+
+        cy.get('body')
+          .click()
+          .type('{leftArrow}');
+
+        cy.get('#binSelect')
+          .should('have.value', '1');
+
+        cy.get('#chanLines path')
+          .first()
+          .should('have.attr','d')
+          .and('not.equal', origPath);
+      });
+  });
+
+
 });
