@@ -472,6 +472,11 @@ export default function erpDataContainer() {
 
     };
 
+    // Deletes one of the current peaks by record id
+    data.deletePeakByRecordID = function(r_id) {
+        data.pickedPeaks = data.pickedPeaks.filter( x => x.record_id!=r_id);
+    };
+
     // Clears all the tempPeaks we had
     data.clearTempPeaks= function() {
         data.tempPeaks = [];

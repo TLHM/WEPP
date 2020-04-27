@@ -37,13 +37,13 @@ body{
 .posPeak {
   stroke: rgb(238, 62, 51);
   stroke-width: 3;
-  fill: none;
+  fill: rgba(241, 6, 6, 0.10);
 }
 
 .negPeak {
   stroke: rgb(229, 27, 254);
   stroke-width: 3;
-  fill: none;
+  fill: rgba(229, 27, 254, 0.10);
 }
 
 #infoPanel {
@@ -168,4 +168,8 @@ body{
 
 #chanLabel {
   height:20px;
+}
+
+.peakInfoLabel {
+  font: 12px monospace;
 }

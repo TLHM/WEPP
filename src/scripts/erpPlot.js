@@ -122,6 +122,71 @@ export default function erpPlot(parent, margin)
     // Added to by savePeaks function
     plot.savedPeaks = [];
 
+    // Group to hold our peak info popup thing
+    plot.infoOverlay = plot.body.append('g').attr('id', 'infoOver');
+
+    // Make our peak info box
+    plot.peakInfo = plot.infoOverlay.append('g').attr('id','peakInfo').attr('class','ignoreDrag');
+    plot.peakInfo.append('rect').attr('id','bg')
+        .attr('width', '80')
+        .attr('height', '60')
+        .attr('fill', 'white')
+        .attr('stroke', 'grey')
+        .attr('rx', '10');
+    plot.peakInfo.append('path').attr('id', 'speechBubbleTri')
+        .attr('fill', 'white')
+        .attr('stroke', 'grey')
+        .attr('d', "M35,59 l5,8 l5,-8");
+    plot.peakInfo.append('text').attr('id', 'ampLabel')
+        .attr('class','peakInfoLabel')
+        .attr('x', 5)
+        .attr('y', 15)
+        .text('Amp:');
+    plot.peakInfo.append('text').attr('id', 'latLabel')
+        .attr('class','peakInfoLabel')
+        .attr('x', 5)
+        .attr('y', 30)
+        .text('Lat:');
+    plot.peakInfo.append('text').attr('id', 'ampVal')
+        .attr('class','peakInfoLabel')
+        .attr('x', 40)
+        .attr('y', 15)
+        .text('15.5');
+    plot.peakInfo.append('text').attr('id', 'latVal')
+        .attr('class','peakInfoLabel')
+        .attr('x', 40)
+        .attr('y', 30)
+        .text('200');
+    var buttonX = 15;
+    var buttonY = 40;
+    plot.deletePeakButton = plot.peakInfo.append('g').attr('id', 'deletePeakButton');;
+    plot.deletePeakButton.append('rect').attr('id', 'buttonBG')
+        .attr('width','50')
+        .attr('height', '15')
+        .attr('x', buttonX)
+        .attr('y', buttonY)
+        .attr('rx', 5)
+        .attr('stroke','grey')
+        .attr('fill', 'white');
+    plot.deletePeakButton.append('text').attr('id', 'delButtonText')
+        .attr('x', buttonX+10)
+        .attr('y', buttonY+11)
+        .style('font','11px sans-serif')
+        .attr('fill','black')
+        .text('Delete');
+    plot.closePeakButton = plot.peakInfo.append('g')
+        .attr('id', 'closePeakInfo');
+    plot.closePeakButton.append('circle').attr('id', 'closeBg')
+        .attr('r', 6)
+        .attr('stroke','grey')
+        .attr('fill', 'white');
+    plot.closePeakButton.append('text').attr('id','closeX')
+        .attr('y', 3)
+        .attr('x', -3)
+        .style('font', '9px sans-serif')
+        .text('X');
+    plot.peakInfo.style('visibility','hidden');
+
     // Function to update the axes and grid based on current
     // values of xDomain and  yDomain
     plot.updateAx = function() {
@@ -325,9 +390,21 @@ export default function erpPlot(parent, margin)
     // We translate it into pos:1, neg:2 and keep that as clickType
     plot.clickType = -1;
     plot.dragPos = [0, 0]; // Start, and dx
+    plot.ignoreDrag = false; // Able to ignore a drag if it starts on certain targets
     plot.dragStart = function()
     {
         //console.log(d3.event.sourceEvent.button);
+        //console.log(d3.event.sourceEvent);
+
+        // Ignore all drags from elements that are (children of) 'ignoreDrag' class
+        var cur = d3.event.sourceEvent.originalTarget;
+        while(cur && cur.id!="plotBody"){
+            if(cur.classList.contains('ignoreDrag')) {
+                plot.ignoreDrag = true;
+                return;
+            }
+            cur = cur.parentElement;
+        }
 
         plot.clickType = d3.event.sourceEvent.button==0 ? 1 : 2;
         plot.dragPos[0] = d3.mouse(this)[0] - plot.margin.left;
@@ -335,6 +412,9 @@ export default function erpPlot(parent, margin)
     };
     plot.dragUpdate= function()
     {
+        if(plot.ignoreDrag) return;
+        plot.hidePeakInfo();
+
         // Update our mouse pos
         plot.dragPos[1] = d3.mouse(this)[0] - plot.margin.left;
 
@@ -346,6 +426,11 @@ export default function erpPlot(parent, margin)
     };
     plot.dragEnd = function()
     {
+        if(plot.ignoreDrag) {
+            plot.ignoreDrag = false;
+            return;
+        }
+
         // If we barely dragged, use a default width centered on av of x's
         if(Math.abs(plot.dragPos[0]-plot.dragPos[1]) < 5)
         {
@@ -365,6 +450,7 @@ export default function erpPlot(parent, margin)
 
         // Callback
         plot.onDragEnd();
+        plot.hidePeakInfo();
     };
     plot.dragHandler = d3.drag()
             .on("start", plot.dragStart)
@@ -407,7 +493,7 @@ export default function erpPlot(parent, margin)
     // Callback that gets called when we highlight
     // Parameters are timeRange (ms) and polarity (0=pos, 1=neg)
     plot.onHighlight = function(timeRange, polarity) {
-        console.log("Highlight!")
+        console.log("Highlight!");
     };
 
     // Highlights defaults time windows, if any
@@ -425,12 +511,34 @@ export default function erpPlot(parent, margin)
         // Loop through and highlight each default window
         for(var i=0; i<plot.defaultTimeWindows.length; i++)
         {
-            plot.dragPos = plot.defaultTimeWindows[i].range.map(t => plot.x(t));
+            plot.dragPos = plot.defaultTimeWindows[i].range.map(plot.x);
             plot.clickType = plot.defaultTimeWindows[i].type == 'pos' ? 1 : 2;
 
             plot.highlight();
             plot.onDragEnd();
         }
+    };
+
+    // Selects a peak to display its info
+    plot.showPeakInfo = function(d, i) {
+        // Save this info for later
+        plot.peakInfo.curPeak = [d,i];
+
+        // Set text
+        plot.peakInfo.select("#ampVal").text(d.amplitude.toFixed(2));
+        plot.peakInfo.select("#latVal").text(d.latency);
+
+        // Move pane to right location
+        plot.peakInfo.attr('transform','translate('+ (plot.x(d.latency)-40) +','+
+            (plot.y(d.amplitude) - 70 ) +')');
+
+        // shows info box
+        plot.peakInfo.style('visibility', null);
+    };
+
+    // No other mouse events if clickin' on certain things.
+    plot.stoppit = function() {
+        d3.event.stopPropagation();
     };
 
     // Displays peaks
@@ -445,7 +553,8 @@ export default function erpPlot(parent, margin)
                 .attr("cx", function(d){ return plot.x(d.latency); })
                 .attr("cy", function(d){ return plot.y(d.amplitude); })
                 .attr("r", 5)
-                .attr('class','posPeak');
+                .attr('class','posPeak ignoreDrag')
+                .on('click', plot.showPeakInfo);
 
         // Display negative peaks
         plot.negPeaks.selectAll("circle")
@@ -454,8 +563,25 @@ export default function erpPlot(parent, margin)
                 .attr("cx", function(d){ return plot.x(d.latency); })
                 .attr("cy", function(d){ return plot.y(d.amplitude); })
                 .attr("r", 5)
-                .attr('class','negPeak');
+                .attr('class','negPeak ignoreDrag')
+                .on('click', plot.showPeakInfo);
     };
+
+    // Hides the peak info box
+    plot.hidePeakInfo = function() {
+        plot.peakInfo.style('visibility', 'hidden');
+    };
+    plot.closePeakButton.on('click', plot.hidePeakInfo);
+
+    // Process click to delete a peak
+    plot.onDeletePeak = function(peakInfo) {
+        console.log(peakInfo);
+    };
+    plot.deletePeak = function() {
+        plot.onDeletePeak(plot.peakInfo.curPeak);
+        plot.hidePeakInfo();
+    };
+    plot.deletePeakButton.on('click', plot.deletePeak);
 
     // Highlight channels temporarily
     plot.curSel = {sel:false, index:0};
@@ -498,6 +624,6 @@ export default function erpPlot(parent, margin)
         });
 
     return plot;
-};
+}
 
 console.log('hello');

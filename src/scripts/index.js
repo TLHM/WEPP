@@ -74,9 +74,9 @@ data.onNewERPFile = function(erp) {
 data.onNewBin = function(bin, selectedChannels) {
   data.clearPeaks();
   data.checkForOldPeaks();
-  console.log(data.pickedPeaks);
-  console.log(data.getPickedPeaks());
-  console.log(data.getPickedPeaks(false));
+  // console.log(data.pickedPeaks);
+  // console.log(data.getPickedPeaks());
+  // console.log(data.getPickedPeaks(false));
 
   mainPlot.showBinData(bin, selectedChannels);
   mainPlot.showPeaks(data.getPickedPeaks(), data.getPickedPeaks(false));
@@ -122,6 +122,13 @@ iPanel.onClick = function(name, chanIndex) {
 // We've ended our highlight dragging, keep the peaks we have
 mainPlot.onDragEnd = function() {
   data.keepTempPeaks();
+};
+
+mainPlot.onDeletePeak = function(p) {
+  data.deletePeakByRecordID(p[0].record_id);
+
+  // Display peaks
+  mainPlot.showPeaks(data.getPickedPeaks(), data.getPickedPeaks(false));
 };
 
 rc.onPost = function(response) {
