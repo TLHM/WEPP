@@ -25,6 +25,7 @@ export default function erpDataContainer() {
         tempPeaks: [],  // Holds peaks until highlight is finalized
         pickedPeaks: [], // Holds peaks for current bin that we've picked
         peakArchive: [], // Holds peaks for current session
+        modified: [],
         uploadedCount: 0,
         peakIndexCounter: 0,
     };
@@ -263,7 +264,7 @@ export default function erpDataContainer() {
     // Our peak archive is a list of files, each files holding their bins,
     // each bin having its peaks
     data.savePeaks = function(notes) {
-        // Make sure we have a file array
+        // Make sure we have an array for the file
         while(data.peakArchive.length < data.curFileIndex) data.peakArchive.push([]);
         if(data.peakArchive.length===data.curFileIndex) data.peakArchive.push([]);
 
@@ -272,8 +273,14 @@ export default function erpDataContainer() {
             data.peakArchive[data.curFileIndex].push([]);
 
         // Finally, update our current bin
-        if(data.peakArchive[data.curFileIndex][data.curBinIndex].length === 0)
+        if(data.peakArchive[data.curFileIndex][data.curBinIndex].length === 0) {
             data.listProgress += 1/data.config.selectedBinCount;
+        } else {
+            // We're modifying this, keep note of that for future uploads
+            // Alternatively just do it all at th end
+            // Want to keep a saved file for recovery just in case if that's the case
+            data.modified.append([data.curFileIndex, data.curBinIndex]);
+        }
         data.peakArchive[data.curFileIndex][data.curBinIndex] = data.pickedPeaks;
 
         data.onSave(data.pickedPeaks);
@@ -492,6 +499,11 @@ export default function erpDataContainer() {
         for(var i=0; i<ourPeaks.length; i++) {
             arrayToSend = arrayToSend.concat(ourPeaks[i].reduce((a,b)=>a.concat(b)));
         }
+        // Add any modified
+        for(i=0; i < data.modified.length; i++) {
+            arrayToSend.append(data.peakArchive[data.modified[i][0]][data.modified[i][1]]);
+        }
+        data.modified = [];
         data.uploading = data.peakArchive.length;
         return JSON.stringify(arrayToSend, (",",":"));
     };
