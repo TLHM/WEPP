@@ -42,7 +42,7 @@ confDiv.append('h2').attr('id','confTitle').text('Configuration: ');
 // Create some of our objects with their divs
 var mainPlot = erpPlot(plotDiv, margin);
 var rc = redcapComs(confDiv.append('div').attr('id','redConf'));
-var conf = createPlotConfig(confDiv, mainPlot);
+var conf = createPlotConfig(confDiv);
 
 // Make sure our plot resizes
 window.addEventListener("resize", function(){
@@ -56,11 +56,23 @@ window.addEventListener("resize", function(){
 });
 
 // Set some callbacks to link the data and the plot, etc.
-data.onLoadConfig = function(config) {
-  rcComs.urlInput.attr('value', config.redcapURL);
-  rcComs.tokenInput.attr('value', config.tokenURL);
+conf.onChangeConfig = function(config) {
+  rc.urlInput.attr('value', config.redcapURL);
+  rc.tokenInput.attr('value', config.tokenURL);
 
-  console.log(rcComs);
+  data.setConfig('selectedChannels', config.selectedChannels);
+  data.setConfig('selectedBinCount', config.selectedBinCount);
+  data.setConfig('selectedBins', config.selectedBins);
+
+  mainPlot.defaultTimeWindows = config.defaultWindows;
+};
+
+data.onConfigUpdate = function(config) {
+  conf.updateSelectedChans(config.selectedChannels);
+};
+
+data.onFindConf = function(file) {
+  conf.loadConfig(file);
 };
 
 data.onNewERPFile = function(erp) {
@@ -90,6 +102,7 @@ data.onChanSelect = function(sel, names, locs) {
 
   // Redraw our bin data
   mainPlot.showBinData(data.getCurBinData(), sel);
+  conf.updateSelectedChans(sel);
 };
 
 mainPlot.onHighlight = function(timeRange, polarity) {
@@ -148,15 +161,15 @@ rc.onQueueReady = function() {
 };
 
 rc.onChangeSettings = function() {
-  data.setConfig('redcapURL', rc.url);
-  data.setConfig('redcapToken', rc.token);
+  conf.setConfig('redcapURL', rc.url);
+  conf.setConfig('redcapToken', rc.token);
 };
 
 // Download button for the config
 var confDL = confDiv.append('button').attr('id', 'dlConfig')
   .text('Save Configuration')
   .on('click', function(){
-    data.saveConfig();
+    conf.saveConfig();
   })
   .attr('disabled', 'true');
 var loadConf = confDiv.append('input').attr('id', 'upConfig')
@@ -167,7 +180,7 @@ var loadConf = confDiv.append('input').attr('id', 'upConfig')
     var files = document.getElementById("selectDir").files;
     if(files.length < 1) return;
 
-    data.loadConfig(files[0]);
+    conf.loadConfig(files[0]);
   });
 
 // Download button for the peaks

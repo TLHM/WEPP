@@ -12,10 +12,7 @@ export default function erpDataContainer() {
         listProgress: 0,
         confFil: {},
         config: {
-            redcapURL: 'https://poa-redcap.med.yale.edu/api/',
-            redcapToken: '',
             selectedChannels: [],
-            defaultWindows: [],
             selectedBins: [],
             selectedBinCount: [],
         },
@@ -54,7 +51,7 @@ export default function erpDataContainer() {
 
         // Load config file if we have one
         if(data.confFile) {
-            data.loadConfig(data.confFile);
+            data.onFindConf(data.confFile);
         }
 
         // Load first file, if there is one
@@ -93,6 +90,14 @@ export default function erpDataContainer() {
         data.loadJSON(JSON.parse(event.target.result));
     };
 
+    data.onConfigUpdate = function(config) {
+      console.log('Loaded Config File');
+    };
+
+    data.onFindConf = function() {
+        console.log('found a config file');
+    };
+
     data.loadJSON = function(jsonData) {
         data.curERP = jsonData;
         data.curERP.fileName = data.curFileName;
@@ -119,6 +124,7 @@ export default function erpDataContainer() {
                 }
             }
             data.config.selectedChannels = data.curERP.selectedChannels;
+            data.onConfigUpdate(data.config);
         } else {
             data.curERP.selectedChannels = data.config.selectedChannels;
         }
@@ -131,52 +137,6 @@ export default function erpDataContainer() {
         data.onNewBin(data.curERP.bins[data.curBinIndex], data.curERP.selectedChannels);
 
         data.onChanSelect(data.curERP.selectedChannels, data.curERP.chans, data.curERP.chanlocs);
-    };
-
-    // Loads a specified config file
-    data.loadConfig = function(confFile) {
-        var confReader = new FileReader();
-        confReader.onload = function(event){
-            data.config = JSON.parse(event.target.result);
-            data.onLoadConfig(data.config);
-        };
-        confReader.readAsText(confFile);
-    };
-
-    // Callback for when we load in a new configuration file
-    data.onLoadConfig = function(config) {
-        console.log('Loaded Config File');
-    };
-
-    // Function to update the config
-    data.setConfig = function(key, value) {
-        data.config[key] = value;
-    };
-
-    // Saves the config file (pops up dialog)
-    data.saveConfig = function() {
-        const confBlob = new Blob([JSON.stringify(data.config)], {type:'application/plsdl'});
-
-        data.downloadBlob(confBlob, 'wepp_conf.json');
-    };
-
-    data.downloadBlob = function(blob, suggestedName='') {
-        // from https://stackoverflow.com/questions/8310657/how-to-create-a-dynamic-file-link-for-download-in-javascript
-        var dlink = document.createElement('a');
-        dlink.style.display = 'none';
-        if(suggestedName.length>0) dlink.download = suggestedName;
-        //dlink.target='_blank';
-        dlink.href = window.URL.createObjectURL(blob);
-        dlink.onclick = function(e) {
-            // revokeObjectURL needs a delay to work properly
-            var that = this;
-            setTimeout(function() {
-                window.URL.revokeObjectURL(that.href);
-            }, 1500);
-        };
-        document.body.appendChild(dlink);
-        dlink.click();
-        dlink.remove();
     };
 
     // Callback that gets called when new ERP file is loaded
@@ -246,6 +206,11 @@ export default function erpDataContainer() {
             data.curBinIndex = 0;
             data.loadCurrentFile();
         }
+    };
+
+    // Function to update the config
+    data.setConfig = function(key, value) {
+      data.config[key] = value;
     };
 
     // Peaks!
