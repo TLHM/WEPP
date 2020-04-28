@@ -354,11 +354,16 @@ export default function erpPlot(parent, margin)
 
         // Update display of bin
         //plot.header.select('#binDisplay').text(bin.name);
+        var lineTypes = [];
+        for(var j=0;j<bin.data.length;j++) {
+            if(selectedChannels.includes(j)) lineTypes.push(selectedChannels.indexOf(j));
+        }
+        //console.log(lineTypes);
 
         // Plot our butterfly lines
         //console.log(bin.data.filter((d, ind) => selectedChannels[ind]));
         plot.bgLines.selectAll("path")
-            .data(bin.data.filter((d, ind) => !selectedChannels[ind]))
+            .data(bin.data.filter((d, ind) => !selectedChannels.includes(ind)))
             .join("path")
                 .attr("d", plot.lineData())
                 .attr('class','butterflyLine');
@@ -366,15 +371,15 @@ export default function erpPlot(parent, margin)
         // Plot our special lines
         // Double, since we want an outline to make them more visible
         plot.outlines.selectAll("path")
-            .data(bin.data.filter((d, ind) => selectedChannels[ind]))
+            .data(bin.data.filter((d, ind) => selectedChannels.includes(ind)))
             .join("path")
                 .attr("d", plot.lineData())
                 .attr('class','chanLineBG');
         plot.lines.selectAll("path")
-            .data(bin.data.filter((d, ind) => selectedChannels[ind]))
+            .data(bin.data.filter((d, ind) => selectedChannels.includes(ind)))
             .join("path")
                 .attr("d", plot.lineData())
-                .attr('class', function(d, i){ return 'chanLine lineType'+(i%5); });
+                .attr('class', function(d, i){ return 'chanLine lineType'+(lineTypes[i]%5); });
 
         // Clear the old peaks, get new ones if we have defaults
         // Moved to the onNewBin set in index.js

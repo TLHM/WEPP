@@ -144,9 +144,9 @@ export default function erpInfoPanel(selection) {
         return Math.sin(panel.deg2rad(locs[i][0]))*locs[i][1]*13;
       })
       .attr('r', '.45')
-      .attr('fill', (d,i) => sel[i] ? 'rgb(118, 182, 228)' : 'white')
-      .attr('stroke', (d,i) => sel[i] ? 'rgb(67, 124, 252)' : 'black')
-      .attr('stroke-width', (d,i) => sel[i] ? '0.15' : '0.1')
+      .attr('fill', (d,i) => sel.includes(i) ? 'rgb(118, 182, 228)' : 'white')
+      .attr('stroke', (d,i) => sel.includes(i) ? 'rgb(67, 124, 252)' : 'black')
+      .attr('stroke-width', (d,i) => sel.includes(i) ? '0.15' : '0.1')
       .on("mouseover", panel.handleMouseOver)
       .on("mouseout", panel.handleMouseOut)
       .on('click', panel.onClick);

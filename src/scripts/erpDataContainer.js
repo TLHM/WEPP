@@ -112,14 +112,20 @@ export default function erpDataContainer() {
         // If there are none, pick the middle channel arbitrarily
         if(data.config.selectedChannels.length != data.curERP.chans.length) {
             var chanRegex = /E\d+/;
-            data.curERP.selectedChannels = data.curERP.chans.map(x => !chanRegex.test(x));
+            data.curERP.selectedChannels = [];
+            for(var i=0; i < data.curERP.chans.length; i++) {
+                if(!chanRegex.test(data.curERP.chans[i])) {
+                    data.curERP.selectedChannels.push(i);
+                }
+            }
             data.config.selectedChannels = data.curERP.selectedChannels;
         } else {
             data.curERP.selectedChannels = data.config.selectedChannels;
         }
+        // console.log(data.curERP.selectedChannels);
 
         // Get our important channel names
-        data.curERP.selectedChanNames = data.curERP.chans.filter((d, ind) => data.config.selectedChannels[ind]);
+        data.curERP.selectedChanNames = data.config.selectedChannels.map(x => data.curERP.chans[x]);
 
         data.onNewERPFile(data.curERP);
         data.onNewBin(data.curERP.bins[data.curBinIndex], data.curERP.selectedChannels);
@@ -437,9 +443,7 @@ export default function erpDataContainer() {
     data.calcPeaks = function(peakType, timeRange) {
         var count = 0;
         for(var i=0; i < data.curERP.selectedChannels.length; i++) {
-            if(!data.curERP.selectedChannels[i]) continue;
-
-            data.calcPeak(peakType, timeRange, i, count);
+            data.calcPeak(peakType, timeRange, data.curERP.selectedChannels[i], i);
             count += 1;
         }
     };
@@ -549,10 +553,11 @@ export default function erpDataContainer() {
 
     // Returns index of channel with respect its class (selected or not)
     data.getSelLoc = function(index){
+        const s = data.curERP.selectedChannels.includes(index);
         return {
-            sel: data.curERP.selectedChannels[index],
+            sel: s,
             index: data.curERP.chans.map((d,i) => i)
-                .filter((d,i) => data.curERP.selectedChannels[i] == data.curERP.selectedChannels[index])
+                .filter((d,i) => data.curERP.selectedChannels.includes(i) == s)
                 .indexOf(index)
         };
     };
@@ -566,7 +571,24 @@ export default function erpDataContainer() {
         //console.log(chIndex);
         if(chIndex < 0 || chIndex >= data.curERP.chans.length) return;
 
-        data.curERP.selectedChannels[chIndex] = !data.curERP.selectedChannels[chIndex];
+        if(data.curERP.selectedChannels.includes(chIndex)) {
+            var ind = data.curERP.selectedChannels.indexOf(chIndex);
+            if(ind < data.curERP.selectedChannels.length-1) {
+                data.curERP.selectedChannels[ind] = -1;
+            } else {
+                data.curERP.selectedChannels.pop();
+            }
+        } else {
+            var foundSpot = false;
+            for(var i = 0; i < data.curERP.selectedChannels.length; i++) {
+                if(data.curERP.selectedChannels[i]==-1) {
+                    foundSpot = true;
+                    data.curERP.selectedChannels[i] = chIndex;
+                    break;
+                }
+            }
+            if(!foundSpot) data.curERP.selectedChannels.push(chIndex);
+        }
         data.onChanSelect(data.curERP.selectedChannels, data.curERP.chans, data.curERP.chanlocs);
     };
 
