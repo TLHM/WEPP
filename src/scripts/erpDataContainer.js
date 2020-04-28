@@ -93,7 +93,7 @@ export default function erpDataContainer() {
         data.loadJSON(JSON.parse(event.target.result));
     };
 
-    data.loadJSON = function(jsonData, name) {
+    data.loadJSON = function(jsonData) {
         data.curERP = jsonData;
         data.curERP.fileName = data.curFileName;
 
@@ -400,12 +400,13 @@ export default function erpDataContainer() {
             }
         }
 
-        // If we have multiple latencies, we'll use the median
+        // If we have multiple latencies, we'll use the mean
         // Note that this is only used if we found multiple peaks with the same amp
+        // But also with 3 lesser points in between, so really probs not going to happen
         if(peakLats.length > 1)
         {
-            var mid = Math.round(peakLats/2);
-            peakLats = [peakLats[mid]];
+            var mid = Math.round(peakLats.reduce((a,b) => a+b)/peakLats.length);
+            peakLats = [mid];
         }
         // Return null if no peaks found
         else if(peakLats.length < 1)
