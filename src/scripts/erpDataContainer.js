@@ -279,6 +279,7 @@ export default function erpDataContainer() {
     data.markUploaded = function(count) {
         if(count <= 0) return;
         data.uploadedCount = data.uploading;
+        data.modified = [];
     };
 
     /**
@@ -473,7 +474,7 @@ export default function erpDataContainer() {
         for(i=0; i < data.modified.length; i++) {
             arrayToSend.append(data.peakArchive[data.modified[i][0]][data.modified[i][1]]);
         }
-        data.modified = [];
+        
         data.uploading = data.peakArchive.length;
         return JSON.stringify(arrayToSend, (",",":"));
     };

@@ -33,7 +33,7 @@ export default function erpPlot(parent, margin)
 
     // w and h are for the full svg area
     // The usable plot area is this minus the margins
-    plot.w = plot.parentSize.width - 10;
+    plot.w = window.innerWidth - 320;
     plot.h = window.innerHeight*0.8 - 10;
 
     // Set width and height for our svg
@@ -159,7 +159,7 @@ export default function erpPlot(parent, margin)
         .text('200');
     var buttonX = 15;
     var buttonY = 40;
-    plot.deletePeakButton = plot.peakInfo.append('g').attr('id', 'deletePeakButton');;
+    plot.deletePeakButton = plot.peakInfo.append('g').attr('id', 'deletePeakButton');
     plot.deletePeakButton.append('rect').attr('id', 'buttonBG')
         .attr('width','50')
         .attr('height', '15')
