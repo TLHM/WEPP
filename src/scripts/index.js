@@ -102,6 +102,8 @@ data.onChanSelect = function(sel, names, locs) {
 
   // Redraw our bin data
   mainPlot.showBinData(data.getCurBinData(), sel);
+  mainPlot.showPeaks(data.getPickedPeaks(), data.getPickedPeaks(false));
+
   conf.updateSelectedChans(sel);
 };
 

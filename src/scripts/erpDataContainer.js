@@ -474,7 +474,7 @@ export default function erpDataContainer() {
         for(i=0; i < data.modified.length; i++) {
             arrayToSend.append(data.peakArchive[data.modified[i][0]][data.modified[i][1]]);
         }
-        
+
         data.uploading = data.peakArchive.length;
         return JSON.stringify(arrayToSend, (",",":"));
     };
@@ -543,6 +543,13 @@ export default function erpDataContainer() {
                 data.curERP.selectedChannels[ind] = -1;
             } else {
                 data.curERP.selectedChannels.pop();
+            }
+
+            // Purge any peaks from this channel from picked peaks
+            for(var p=data.pickedPeaks.length-1; p>=0; p--) {
+                if(data.pickedPeaks[p].chan === data.curERP.chans[chIndex]) {
+                    data.pickedPeaks.splice(p,1);
+                }
             }
         } else {
             var foundSpot = false;

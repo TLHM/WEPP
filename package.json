@@ -51,6 +51,6 @@
   },
   "dependencies": {
     "d3": "^5.15.1",
-    "gremlins.js": "^2.1.0"
+    "gremlins.js": "^2.1.1"
   }
 }
