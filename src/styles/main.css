@@ -99,8 +99,14 @@ body{
 }
 
 #confTitle {
-  margin: 20px 45px 0px 45px;
+  margin: 10px 35px 0px 35px;
+  padding: 10px 10px 10px 10px;
   font: bold 1.2em sans-serif;
+  cursor: pointer;
+}
+
+#confTitle:hover {
+  background-color: rgb(174, 185, 205);
 }
 
 .configPrompt {
@@ -111,6 +117,9 @@ body{
 #configContainer {
   margin: 10px 45px 10px;
   display: flex;
+  max-height: 0px;
+  overflow: hidden;
+  transition: max-height 0.2s ease-out;
 }
 
 #redcap {
@@ -172,4 +181,42 @@ body{
 
 .peakInfoLabel {
   font: 12px monospace;
+}
+
+#overlay {
+  position: fixed; /* Sit on top of the page content */
+  width: 100%; /* Full width (cover the whole page) */
+  height: 100%; /* Full height (cover the whole page) */
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0,0,0,0.6); /* Black background with opacity */
+  z-index: 2; /* Specify a stack order in case you're using a different order for other elements */
+}
+
+.overlayWindow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%,-50%);
+  -ms-transform: translate(-50%,-50%);
+  background-color: white;
+  padding: 10px;
+}
+
+.browseFileLabel {
+    border: 1px solid #ccc;
+    display: inline-block;
+    padding: 6px 12px;
+    cursor: pointer;
+}
+
+#binSelConf {
+  padding: 10px;
+}
+
+.dlButton {
+  margin: 5px;
+  height: 25px;
 }

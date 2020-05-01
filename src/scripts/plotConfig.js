@@ -7,11 +7,13 @@
 */
 
 import downloadBlob from './blobDL.js';
+import * as d3 from 'd3';
 
 export default function createPlotConfig(myDiv)
 {
   var conf = {
     body: myDiv,
+    visible: false,
     config: {
       redcapURL: 'https://poa-redcap.med.yale.edu/api/',
       redcapToken: '',
@@ -48,12 +50,69 @@ export default function createPlotConfig(myDiv)
     .attr('class','twInput')
     .attr('type', 'number');
 
+  // Select / deselect bins
+  conf.binSel = conf.body.append('div').attr('id','binSelConf');
+  conf.binSel.append('b').text('Bins:').style('height', '20px');
+
+  // Called on change of our checks
+  conf.updateBins = function() {
+    conf.config.selectedBinCount = 0;
+    conf.binSel.selectAll('div')
+      .each(function(d,i){
+        const isSelected = d3.select(this).select('input').property('checked') || false;
+        conf.config.selectedBinCount += isSelected ? 1 : 0;
+        conf.config.selectedBins[i] = isSelected;
+      });
+
+    // Can't allow you to uncheck the last bin!
+    if(conf.config.selectedBinCount === 1){
+      conf.binSel.selectAll('div')
+        .each(function(d,i){
+          const isSelected = d3.select(this).select('input').property('checked') || false;
+          if(isSelected) {
+            d3.select(this).attr('disabled','true');
+          }
+        });
+    } else {
+      conf.binSel.selectAll('div')
+        .each(function(d,i){
+          d3.select(this).attr('disabled', null);
+        });
+    }
+
+    conf.onChangeConfig(conf.config);
+  };
+
+  // Shows all bins, regardless of selection, checks / unchecks
+  conf.showBins = function(binNames) {
+    if(conf.config.selectedBins.length != binNames.length) {
+      conf.config.selectedBins = binNames.map((d,i) => true);
+      conf.config.selectedBinCount = conf.config.selectedBins.length;
+    }
+    conf.binSel.selectAll('div')
+      .data(binNames)
+      .join('div')
+      .each(function(d,i){
+        d3.select(this).selectAll('input')
+          .data([conf.config.selectedBins[i]])
+          .join('input')
+          .attr('type', 'checkbox')
+          .property('checked', sel => sel ? 'true' : null)
+          .on('change', conf.updateBins);
+        d3.select(this).selectAll('label')
+          .data([d])
+          .join('label')
+          .attr('class','binLabel')
+          .text(d);
+      });
+  };
+
 
   // Loads a specified config file
   conf.loadConfig = function(confFile) {
       var confReader = new FileReader();
       confReader.onload = function(event){
-          console.log(event.target.result)
+          console.log(event.target.result);
           conf.config = JSON.parse(event.target.result);
           conf.onChangeConfig(conf.config);
 
@@ -125,6 +184,13 @@ export default function createPlotConfig(myDiv)
 
   conf.updateSelectedChans = function(sel) {
     conf.config.selectedChannels = sel;
+  };
+
+  // Shows / hides config div
+  conf.toggleVisibility = function() {
+    conf.body
+      .attr('style','max-height: '+(conf.visible ? 0 : 200)+'px');
+    conf.visible = !conf.visible;
   };
 
   return conf;

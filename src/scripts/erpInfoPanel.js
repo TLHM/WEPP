@@ -31,12 +31,15 @@ export default function erpInfoPanel(selection) {
         .text(d => d.name);
   };
 
-  panel.setBins = function(binNames) {
+  panel.setBins = function(binNames, binSelection) {
+    if(!binSelection) binSelection = binNames.map(d => true);
+    
     panel.binSelect.selectAll('option')
       .data(binNames)
       .join('option')
         .attr('value', (d, i) => i)
-        .text(d => d);
+        .text(d => d)
+        .attr('disabled', (d,i) => binSelection[i] ? null : 'true');
   };
 
   // Callbacks for when file, bin are selected

@@ -111,6 +111,9 @@ export default function erpDataContainer() {
         // Set current bin if necessary
         if(data.curBinIndex < 0) {
             data.curBinIndex = data.curERP.bins.length-1;
+            while(!data.config.selectedBins[data.curBinIndex]) data.curBinIndex-=1;
+        } else {
+            while(!data.config.selectedBins[data.curBinIndex]) data.curBinIndex+=1;
         }
 
         // Estimate the "important" channels, ie ones not named E##
@@ -158,6 +161,8 @@ export default function erpDataContainer() {
 
     // For navigating bins, files
     data.getBinNames = function() {
+        if(!data.curERP.bins) return [];
+
         return data.curERP.bins.map(b => b.name);
     };
     data.selectBin = function(index) {
@@ -174,8 +179,11 @@ export default function erpDataContainer() {
             data.prevFile();
         } else {
             data.curBinIndex -= 1;
-
-            data.onNewBin(data.curERP.bins[data.curBinIndex], data.curERP.selectedChannels);
+            if(!data.config.selectedBins[data.curBinIndex]) {
+                data.prevBin();
+            } else {
+                data.onNewBin(data.curERP.bins[data.curBinIndex], data.curERP.selectedChannels);
+            }
         }
     };
 
@@ -195,8 +203,11 @@ export default function erpDataContainer() {
             data.nextFile();
         } else {
             data.curBinIndex += 1;
-
-            data.onNewBin(data.curERP.bins[data.curBinIndex], data.curERP.selectedChannels);
+            if(!data.config.selectedBins[data.curBinIndex]) {
+                data.nextBin();
+            } else {
+                data.onNewBin(data.curERP.bins[data.curBinIndex], data.curERP.selectedChannels);
+            }
         }
     };
 
@@ -529,6 +540,8 @@ export default function erpDataContainer() {
     };
 
     data.getCurBinData = function(){
+        if(!data.curERP.bins) return [];
+
         return data.curERP.bins[data.curBinIndex];
     };
 

@@ -15,6 +15,11 @@ import '../styles/main.css';
 // Hide div, it's just there in case we can't do anything
 d3.select('body').select('#noScript').style('display','None');
 
+// Grab pointers to the overlay and pieces
+var overlay = d3.select('#overlay').style('display','block');
+var intro = d3.select('#intro');
+var outro = d3.select('#outro').style('display', 'none');
+
 // Create our data loader
 var data = erpDataContainer();
 
@@ -25,7 +30,11 @@ var margin = {top: 10, right: 25, bottom: 30, left: 50};
 var plotAndInfo = d3.select('body').append('div').attr('id','plotAndInfo')
   .style('display', 'flex');
 var plotDiv = plotAndInfo.append('div').attr('id','plotContainer');
-var confDiv = d3.select('body').append('div').attr('id','configContainer');
+
+// Create the config div
+var confContainer = d3.select('body').append('div').attr('id','configOuter');
+confContainer.append('h2').attr('id','confTitle').text(' + Configuration: ');
+var confDiv = confContainer.append('div').attr('id','configContainer');
 
 // Make our info panel
 var iPanel = erpInfoPanel(plotAndInfo.append('div').attr('id','infoPanel'));
@@ -36,13 +45,16 @@ iPanel.onBinSel(function(){
   data.selectBin(+d3.event.target.value);
 });
 
-// Create the config div
-confDiv.append('h2').attr('id','confTitle').text('Configuration: ');
-
 // Create some of our objects with their divs
 var mainPlot = erpPlot(plotDiv, margin);
 var rc = redcapComs(confDiv.append('div').attr('id','redConf'));
 var conf = createPlotConfig(confDiv);
+
+// Add show/hide to container h2
+confContainer.select('#confTitle').on('click', function(){
+  d3.select(this).text((conf.visible ? ' +' : ' -')+' Configuration: ');
+  conf.toggleVisibility();
+});
 
 // Make sure our plot resizes
 window.addEventListener("resize", function(){
@@ -60,9 +72,17 @@ conf.onChangeConfig = function(config) {
   rc.urlInput.attr('value', config.redcapURL);
   rc.tokenInput.attr('value', config.tokenURL);
 
+  conf.showBins(data.getBinNames(), config.selectedBins);
+
   data.setConfig('selectedChannels', config.selectedChannels);
-  data.setConfig('selectedBinCount', config.selectedBinCount);
-  data.setConfig('selectedBins', config.selectedBins);
+  if(config.selectedBinCount > 0) {
+    data.setConfig('selectedBinCount', config.selectedBinCount);
+    data.setConfig('selectedBins', config.selectedBins);
+
+    iPanel.setBins(data.getBinNames(), config.selectedBins);
+
+    if(!config.selectedBins[data.curBinIndex]) data.nextBin();
+  }
 
   mainPlot.defaultTimeWindows = config.defaultWindows;
 };
@@ -78,9 +98,11 @@ data.onFindConf = function(file) {
 data.onNewERPFile = function(erp) {
   mainPlot.updateERP(erp);
 
-  iPanel.setBins(data.getBinNames());
+  iPanel.setBins(data.getBinNames(), data.config.selectedBins);
   iPanel.selectFile(data.curFileIndex);
   iPanel.selectBin(data.curBinIndex);
+
+  conf.showBins(data.getBinNames());
 };
 
 data.onNewBin = function(bin, selectedChannels) {
@@ -168,25 +190,37 @@ rc.onChangeSettings = function() {
 };
 
 // Download button for the config
-var confDL = confDiv.append('button').attr('id', 'dlConfig')
+var buttonCol = confDiv.append('div').attr('id','buttonsCol');
+var confDL = buttonCol.append('button').attr('id', 'dlConfig')
   .text('Save Configuration')
+  .attr('class', 'dlButton')
   .on('click', function(){
     conf.saveConfig();
   })
   .attr('disabled', 'true');
-var loadConf = confDiv.append('input').attr('id', 'upConfig')
+buttonCol.append('br');
+var loadConfLabel = buttonCol.append('label')
+  .text("Load Config File")
+  .attr('class', 'browseFileLabel configPrompt')
+  .attr('for','upConfig')
+  .style('height','20px')
+  .style('margin','5px');
+var loadConf = buttonCol.append('input').attr('id', 'upConfig')
   .attr('type',"file")
   .attr('accept','.json')
+  .style('display','none')
   .text('Load Configuration')
   .on('change', function(){
-    var files = document.getElementById("selectDir").files;
+    var files = document.getElementById("upConfig").files;
     if(files.length < 1) return;
 
     conf.loadConfig(files[0]);
   });
+buttonCol.append('br');
 
 // Download button for the peaks
-var peakDL = confDiv.append('button').attr('id', 'dlPeaks')
+var peakDL = buttonCol.append('button').attr('id', 'dlPeaks')
+  .attr('class', 'dlButton')
   .text('Export Picked Peaks')
   .on('click', function(){
     data.exportToCSV();
@@ -203,14 +237,19 @@ data.onEmptyPeaks = function(){
 
 // Create our file browser button
 // Make sure we get the files when they're chosen
-var fileIn = plotDiv.append('div')
-  .attr('id','fileIn')
-  .append('input')
+var fileIn = intro.append('div')
+  .attr('id','fileIn');
+fileIn.append('label').attr('id', 'selDirLabel')
+  .text("Browse")
+  .attr('class', 'browseFileLabel')
+  .attr('for','selectDir');
+fileIn.append('input')
   .attr('type',"file")
   .attr("id","selectDir")
   .attr("name","fileList")
   .attr('webkitdirectory','true')
   .attr('multiple','true')
+  .style('display','none')
   .on('change',function(){
     console.log("loading Files");
     console.log(document.getElementById("selectDir").files);
@@ -219,6 +258,8 @@ var fileIn = plotDiv.append('div')
     //iPanel.setBins(['test','one','two']);
 
     confDL.attr('disabled',null);
+
+    overlay.style('display','none');
   });
 
 
