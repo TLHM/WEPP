@@ -5,6 +5,8 @@
   switching between files, holding project configuration, etc.
 */
 
+import downloadBlob from './blobDL.js';
+
 export default function erpDataContainer() {
     var data = {
         reader: new FileReader(),
@@ -30,6 +32,7 @@ export default function erpDataContainer() {
     // Called when we get a new batch of files to load
     // Saves the list for further use, loads first file (if there is one)
     data.loadList = function(flist) {
+        console.log(flist);
         data.fileList = [];
         data.listProgress = 0;
 
@@ -237,7 +240,7 @@ export default function erpDataContainer() {
     data.checkForOldPeaks = function() {
         if(data.peakArchive.length > data.curFileIndex &&
             data.peakArchive[data.curFileIndex].length > data.curBinIndex) {
-            data.pickedPeaks = data.peakArchive[data.curFileIndex][data.curBinIndex];
+            data.pickedPeaks = data.peakArchive[data.curFileIndex][data.curBinIndex].slice();
         }
     };
 
@@ -245,36 +248,42 @@ export default function erpDataContainer() {
     // Has callback for sending to elsewhere as well
     // Our peak archive is a list of files, each files holding their bins,
     // each bin having its peaks
-    data.savePeaks = function(notes) {
+    data.savePeaks = function() {
         // Make sure we have an array for the file
-        while(data.peakArchive.length < data.curFileIndex) data.peakArchive.push([]);
-        if(data.peakArchive.length===data.curFileIndex) data.peakArchive.push([]);
+        while(data.peakArchive.length <= data.curFileIndex) data.peakArchive.push([]);
 
         // Make sure it has the right amount of bins
         while(data.peakArchive[data.curFileIndex].length < data.curERP.bins.length)
             data.peakArchive[data.curFileIndex].push([]);
 
         // Finally, update our current bin
+        console.log(data.peakArchive[data.curFileIndex]);
+        console.log(data.curBinIndex);
+        console.log(data.peakArchive[data.curFileIndex][data.curBinIndex].length);
         if(data.peakArchive[data.curFileIndex][data.curBinIndex].length === 0) {
             data.listProgress += 1/data.config.selectedBinCount;
         } else {
             // We're modifying this, keep note of that for future uploads
             // Alternatively just do it all at th end
             // Want to keep a saved file for recovery just in case if that's the case
-            data.modified.append([data.curFileIndex, data.curBinIndex]);
+            data.modified.push([data.curFileIndex, data.curBinIndex]);
         }
         data.peakArchive[data.curFileIndex][data.curBinIndex] = data.pickedPeaks;
 
         data.onSave(data.pickedPeaks);
+
+        if(Math.abs(1-data.listProgress) < 0.0001) {
+            data.onComplete();
+        }
+        console.log(data.peakArchive);
     };
 
     // Updates the notes field for all current picked peaks
     data.updateNotes = function(newNotes) {
-        console.log(newNotes);
         for(var i=0; i<data.pickedPeaks.length; i++) {
             data.pickedPeaks[i].notes = newNotes;
         }
-        console.log(data.pickedPeaks);
+        // console.log(data.pickedPeaks);
     };
 
     // Callback for when peaks are saved
@@ -282,6 +291,11 @@ export default function erpDataContainer() {
     data.onSave = function(savedPeaks) {
         console.log('Peaks were saved');
         console.log(savedPeaks);
+    };
+
+    // Callback for completing our files
+    data.onComplete = function(){
+        console.log("Finished list!");
     };
 
     // Updates our record of which peaks we've uploaded
@@ -483,7 +497,7 @@ export default function erpDataContainer() {
         }
         // Add any modified
         for(i=0; i < data.modified.length; i++) {
-            arrayToSend.append(data.peakArchive[data.modified[i][0]][data.modified[i][1]]);
+            arrayToSend.push(data.peakArchive[data.modified[i][0]][data.modified[i][1]]);
         }
 
         data.uploading = data.peakArchive.length;
@@ -517,7 +531,7 @@ export default function erpDataContainer() {
         csv = csv.join('\r\n');
 
         const csvBlob = new Blob([csv], {type:'txt/csv'});
-        data.downloadBlob(csvBlob, 'peaks.csv');
+        downloadBlob(csvBlob, 'peaks.csv');
     };
 
     data.getProgress = function() {

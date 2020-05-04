@@ -20,6 +20,24 @@ var overlay = d3.select('#overlay').style('display','block');
 var intro = d3.select('#intro');
 var outro = d3.select('#outro').style('display', 'none');
 
+const showIntro = function() {
+  intro.style('display','block');
+  outro.style('display','none');
+  overlay.style('display','block');
+
+  closeOver.style('display','block');
+};
+
+const hideOverlay = function() {
+  overlay.style('display','none');
+};
+
+var closeOver = overlay.append('button').attr('id','closeOverlay')
+  .on('click', hideOverlay)
+  .attr('class', 'dlButton')
+  .text('Close')
+  .attr('display','none');
+
 // Create our data loader
 var data = erpDataContainer();
 
@@ -129,6 +147,12 @@ data.onChanSelect = function(sel, names, locs) {
   conf.updateSelectedChans(sel);
 };
 
+data.onComplete = function() {
+  outro.style('display','block');
+  intro.style('display','none');
+  overlay.style('display','block');
+};
+
 mainPlot.onHighlight = function(timeRange, polarity) {
   // Only want one set of peaks from this highlight
   data.clearTempPeaks();
@@ -218,14 +242,29 @@ var loadConf = buttonCol.append('input').attr('id', 'upConfig')
   });
 buttonCol.append('br');
 
+// Show intro
+var showIntroButton = plotDiv.append('button').attr('id', 'showIntroButton')
+  .attr('class', 'dlButton')
+  .text('Help / Open New Project')
+  .on('click', function(){
+    showIntro();
+  });
+
 // Download button for the peaks
-var peakDL = buttonCol.append('button').attr('id', 'dlPeaks')
+var peakDL = plotDiv.append('button').attr('id', 'dlPeaks')
   .attr('class', 'dlButton')
   .text('Export Picked Peaks')
   .on('click', function(){
     data.exportToCSV();
   })
   .attr('disabled', 'true');
+
+outro.append('button').attr('id', 'dlPeaksOut')
+  .attr('class', 'dlButton')
+  .text('Export Picked Peaks')
+  .on('click', function(){
+    data.exportToCSV();
+  });
 
 data.onGetPeaks = function(){
   peakDL.attr('disabled', null);
@@ -237,12 +276,19 @@ data.onEmptyPeaks = function(){
 
 // Create our file browser button
 // Make sure we get the files when they're chosen
+const stahp = function(){
+  d3.event.preventDefault();
+  d3.event.stopPropagation();
+};
 var fileIn = intro.append('div')
-  .attr('id','fileIn');
+  .attr('id','fileIn')
+  .attr('class', 'dropzone');
 fileIn.append('label').attr('id', 'selDirLabel')
   .text("Browse")
   .attr('class', 'browseFileLabel')
   .attr('for','selectDir');
+fileIn.append('div').attr('id','dropLabel')
+  .text(' or Drop a folder here.');
 fileIn.append('input')
   .attr('type',"file")
   .attr("id","selectDir")
@@ -250,10 +296,11 @@ fileIn.append('input')
   .attr('webkitdirectory','true')
   .attr('multiple','true')
   .style('display','none')
-  .on('change',function(){
+  .on('change',function(d,i){
     console.log("loading Files");
     console.log(document.getElementById("selectDir").files);
     data.loadList(document.getElementById("selectDir").files);
+
     iPanel.setFiles(data.fileList);
     //iPanel.setBins(['test','one','two']);
 
@@ -261,6 +308,86 @@ fileIn.append('input')
 
     overlay.style('display','none');
   });
+fileIn.on('dragstart', stahp).on('drag', stahp);
+fileIn.on('dragover', function(d,i){
+  stahp();
+  d3.select(this).attr('class','dropzone dropzoneHighlight');
+}).on('dragenter', function(d,i){
+  stahp();
+  d3.select(this).attr('class','dropzone dropzoneHighlight');
+});
+fileIn.on('dragleave', function(d,i){
+  stahp();
+  d3.select(this).attr('class','dropzone');
+}).on('dragend', function(d,i){
+  stahp();
+  d3.select(this).attr('class','dropzone');
+});
+const dropFinal = function(droppedFiles) {
+  console.log(droppedFiles);
+  data.loadList(droppedFiles);
+
+  iPanel.setFiles(data.fileList);
+
+  confDL.attr('disabled',null);
+
+  overlay.style('display','none');
+};
+fileIn.on('drop', function(d,i){
+  console.log("loading Files");
+  const length = d3.event.dataTransfer.items.length;
+  var expectedCount = 0;
+  var fileList = [];
+
+  // Loop through and do a bunch of async calls...
+  const addFile = function(f) {
+    fileList.push(f);
+    expectedCount -= 1;
+    if(expectedCount == 0) {
+      dropFinal(fileList);
+    }
+  };
+  const errCallback = function(err) {
+    console.log(err);
+    fileIn.select('#dropLabel').text('There was an error: '+err);
+  };
+  const parseFileEntries = function(entries) {
+    entries = entries.filter(x => x.isFile);
+
+    for(var fii=0; fii<entries.length; fii++) {
+      expectedCount += 1;
+      entries[fii].file(addFile, errCallback);
+    }
+
+    if(expectedCount == 0) {
+      fileIn.select('#dropLabel').text("I didn't find any files in your folder!");
+    }
+  };
+
+  for (var fi = 0; fi < length; fi++) {
+    var entry = d3.event.dataTransfer.items[fi].webkitGetAsEntry();
+    if (entry.isFile) {
+      expectedCount += 1;
+      entry.file(addFile, errCallback);
+    } else if (entry.isDirectory) {
+      if(expectedCount > 0) {
+        expectedCount = -1;
+        fileIn.select('#dropLabel').text('Please drop a single folder OR a selection of files.');
+        return;
+      }
+
+      var dirRead = entry.createReader();
+
+      dirRead.readEntries(parseFileEntries, errCallback);
+      break;
+    }
+  }
+
+  stahp();
+});
+
+d3.select('body').on('drop', stahp);
+d3.select('body').on('dragover', stahp);
 
 
 // This is called on space bar
