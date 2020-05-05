@@ -26,6 +26,7 @@ export default function erpDataContainer() {
         peakArchive: [], // Holds peaks for current session
         modified: [],
         uploadedCount: 0,
+        lastUpload: -1,
         peakIndexCounter: 0,
     };
 
@@ -114,9 +115,9 @@ export default function erpDataContainer() {
         // Set current bin if necessary
         if(data.curBinIndex < 0) {
             data.curBinIndex = data.curERP.bins.length-1;
-            while(!data.config.selectedBins[data.curBinIndex]) data.curBinIndex-=1;
+            while(data.curBinIndex>0 && !data.config.selectedBins[data.curBinIndex]) data.curBinIndex-=1;
         } else {
-            while(!data.config.selectedBins[data.curBinIndex]) data.curBinIndex+=1;
+            while(data.curBinIndex<data.config.selectedBins.length-1 && !data.config.selectedBins[data.curBinIndex]) data.curBinIndex+=1;
         }
 
         // Estimate the "important" channels, ie ones not named E##
@@ -257,9 +258,6 @@ export default function erpDataContainer() {
             data.peakArchive[data.curFileIndex].push([]);
 
         // Finally, update our current bin
-        console.log(data.peakArchive[data.curFileIndex]);
-        console.log(data.curBinIndex);
-        console.log(data.peakArchive[data.curFileIndex][data.curBinIndex].length);
         if(data.peakArchive[data.curFileIndex][data.curBinIndex].length === 0) {
             data.listProgress += 1/data.config.selectedBinCount;
         } else {
@@ -275,7 +273,6 @@ export default function erpDataContainer() {
         if(Math.abs(1-data.listProgress) < 0.0001) {
             data.onComplete();
         }
-        console.log(data.peakArchive);
     };
 
     // Updates the notes field for all current picked peaks
@@ -303,7 +300,9 @@ export default function erpDataContainer() {
     // so, we'll do it a bit more jankily
     data.markUploaded = function(count) {
         if(count <= 0) return;
-        data.uploadedCount = data.uploading;
+        console.log(data.lastUpload);
+        data.uploadedCount = data.lastUpload;
+
         data.modified = [];
     };
 
@@ -485,23 +484,32 @@ export default function erpDataContainer() {
         data.tempPeaks = [];
     };
 
-    // Gets our peaks as a JSON string for upload to redcap
-    // Only returns those not yet uploaded
-    data.getPeaksAsJSON = function()
+    // Gets our peaks as a JSON string
+    // Only returns files with index >= from
+    data.getPeaksAsJSON = function(from)
     {
         if(data.uploadedCount >= data.peakArchive.length) return "[]";
-        var ourPeaks = data.peakArchive.slice(data.uploadedCount);
+
+        var ourPeaks = data.peakArchive.slice(from);
         var arrayToSend = [];
         for(var i=0; i<ourPeaks.length; i++) {
             arrayToSend = arrayToSend.concat(ourPeaks[i].reduce((a,b)=>a.concat(b)));
         }
+
         // Add any modified
         for(i=0; i < data.modified.length; i++) {
-            arrayToSend.push(data.peakArchive[data.modified[i][0]][data.modified[i][1]]);
+            arrayToSend = arrayToSend.concat(data.peakArchive[data.modified[i][0]][data.modified[i][1]]);
         }
 
-        data.uploading = data.peakArchive.length;
         return JSON.stringify(arrayToSend, (",",":"));
+    };
+
+    // For uploading to RedCap, assumes we're being called after a file has just been
+    // Completed (in terms of all bins picked)
+    // We upload at each file, rather than each bin for easier keeping track
+    data.getUpload = function(){
+        data.lastUpload = data.peakArchive.length;
+        return data.getPeaksAsJSON(data.uploadedCount);
     };
 
     // Returns out pos and neg peaks

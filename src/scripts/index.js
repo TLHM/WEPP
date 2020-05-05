@@ -151,6 +151,9 @@ data.onComplete = function() {
   outro.style('display','block');
   intro.style('display','none');
   overlay.style('display','block');
+
+  // If we aren't already pending, send our peaks to redCap
+  rc.sendPeaksToRedcap(data.getUpload());
 };
 
 mainPlot.onHighlight = function(timeRange, polarity) {
@@ -265,6 +268,12 @@ outro.append('button').attr('id', 'dlPeaksOut')
   .on('click', function(){
     data.exportToCSV();
   });
+outro.append('button').attr('id', 'newProj')
+  .attr('class', 'dlButton')
+  .text('Load New Project')
+  .on('click', function(){
+    showIntro();
+  });
 
 data.onGetPeaks = function(){
   peakDL.attr('disabled', null);
@@ -334,6 +343,8 @@ const dropFinal = function(droppedFiles) {
   overlay.style('display','none');
 };
 fileIn.on('drop', function(d,i){
+  d3.select(this).attr('class','dropzone');
+  
   console.log("loading Files");
   const length = d3.event.dataTransfer.items.length;
   var expectedCount = 0;
@@ -399,11 +410,13 @@ var acceptAndNext = function() {
   data.updateNotes(notes);
   data.savePeaks();
 
-  // If we aren't already pending, send our peaks to redCap
-  rc.sendPeaksToRedcap(data.getPeaksAsJSON());
-
   // move on
+  const oldFile = data.curFileIndex;
   data.nextBin();
+  if(oldFile != data.curFileIndex) {
+    // If we aren't already pending, send our peaks to redCap
+    rc.sendPeaksToRedcap(data.getUpload());
+  }
 
   // Update our progress bar
   iPanel.setProgress(data.getProgress());
