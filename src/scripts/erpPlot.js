@@ -74,7 +74,12 @@ export default function erpPlot(parent, margin)
         .attr('transform','translate(0,'+(plot.h-plot.margin.bottom-plot.margin.top)+')');
 
     plot.yAxis = plot.body.append("g")
-        .attr('id', 'yAxis');
+        .attr('id', 'yAxis')
+        .attr('class','ignoreDrag');
+    plot.yAxis.append('rect').attr('id', 'hitbox')
+        .attr('width','25')
+        .attr('x','-20')
+        .attr('fill','rgba(1,1,1,0.01)');
 
     // Create calls for setting these
     plot.xAxCall = d3.axisBottom(plot.x);
@@ -225,12 +230,16 @@ export default function erpPlot(parent, margin)
             .attr("x2",plot.x(plot.xDomain[1]))
             .attr("y1",plot.y(0))
             .attr("y2",plot.y(0));
+
+        // Update the y axis hitbox
+        plot.yAxis.select('#hitbox')
+            .attr('height',plot.y(plot.yDomain[0]-plot.yDomain[1]));
     };
 
     // Helper function for our axes
     plot.getTicks = function(start,stop,step) {
         start = Math.floor(start/step)*step;
-        return Array(Math.ceil((stop - start) / step)+1).fill(start).map((x, i) => x + i * step);
+        return Array(Math.ceil((stop - start) / step)+0).fill(start).map((x, i) => x + i * step);
     };
 
     // Function to set our size properly given a parent div
@@ -274,7 +283,8 @@ export default function erpPlot(parent, margin)
             .attr('x', plot.x(highlights[2]))
             .attr('width', plot.x(highlights[3]) - plot.x(highlights[2]));
 
-        // Peaks and ERP data are redrawn elsewhere
+        // Redraw peaks and lines
+        plot.redraw();
     };
 
     // Set default plot axes, grid
@@ -317,34 +327,6 @@ export default function erpPlot(parent, margin)
         plot.xDomain[0] = plot.curTimes[0];
         plot.xDomain[1] = plot.curTimes[plot.curTimes.length-1];
         plot.updateAx();
-
-        // Display our channels in our channel labels svg
-        // If there are more than 5, then we don't have enough different
-        // Line types, so we'll just give up and show nothing
-        var showChans = erp.selectedChanNames;
-        // if(plot.pickedChanNames.length > 5)
-        // {
-        //     showChans = [];
-        // }
-        //console.log(showChans);
-        // var labels = plot.header.select('#chanLabels').selectAll('g')
-        //     .data(showChans)
-        //     .join('g')
-        //         .attr('id','chanLabel');
-        // labels.append('line')
-        //         .attr('x1', function(d,i){ return 10 + 120*i; })
-        //         .attr('x2', function(d,i){ return 40 + 120*i; })
-        //         .attr('y1', function(d,i){ return 65; })
-        //         .attr('y2', function(d,i){ return 65; })
-        //         .attr('class', function(d, i){ return 'chanLine lineType'+(i%5); });
-        // labels.append('text')
-        //         .attr("font-family", "sans-serif")
-        //         .attr("font-size", 10)
-        //         .attr("text-anchor", "left")
-        //         .attr("y", 68)
-        //         .attr("x", function(d,i){ return 45 + 120*i; })
-        //         .text(function(d){ return d.substring(0,Math.min(d.length,15)); });
-
     };
 
     // Function that actually plots channel data
@@ -385,6 +367,25 @@ export default function erpPlot(parent, margin)
         // Moved to the onNewBin set in index.js
         //plot.clearPeaks();
         //plot.highlightDefault();
+    };
+
+    // No change in data, just redrawing due to resize or rescale
+    plot.redraw = function() {
+
+        // Redraw lines
+        plot.bgLines.selectAll("path").attr("d", plot.lineData());
+        plot.outlines.selectAll("path").attr("d", plot.lineData());
+        plot.lines.selectAll("path").attr("d", plot.lineData());
+
+        // Redraw pos peaks
+        plot.posPeaks.selectAll("circle")
+            .attr("cx", function(d){ return plot.x(d.latency); })
+            .attr("cy", function(d){ return plot.y(d.amplitude); });
+
+        // Redraw negative peaks
+        plot.negPeaks.selectAll("circle")
+            .attr("cx", function(d){ return plot.x(d.latency); })
+            .attr("cy", function(d){ return plot.y(d.amplitude); });
     };
 
     /**
@@ -463,6 +464,58 @@ export default function erpPlot(parent, margin)
             .on("end", plot.dragEnd)
             // This filter usually blocks right click, but we want both
             .filter(function(){return true;});
+
+    // Dragging y axis
+    var yDragPt;
+    var yDrag0;
+    var yDragScale; // 1 px = ?? units
+    const yDragStart = function() {
+        yDragPt = d3.mouse(this)[1] - plot.margin.top;
+        yDragScale = plot.y.invert(yDragPt) - plot.y.invert(yDragPt-1);
+    };
+    const yDrag = function() {
+        var curDragPt = d3.mouse(this)[1] - plot.margin.top;
+
+        yDrag0 = plot.y(0);
+
+        // Getting closer to 0, or farther?
+        // If getting closer, add to range on side of mouse
+        // If getting farther, reduce range on side of mouse
+        if(Math.abs(yDragPt-yDrag0) < Math.abs(curDragPt-yDrag0)){
+            // Getting farther from 0
+            if (curDragPt > yDrag0) {
+                // Reduce range on negative side
+                plot.yDomain[0] = plot.yDomain[0] -
+                    yDragScale * Math.abs(curDragPt - yDragPt);
+            } else {
+                // Reduce range on positive side
+                plot.yDomain[1] = plot.yDomain[1] +
+                    yDragScale * Math.abs(curDragPt - yDragPt);
+            }
+        } else {
+            // Getting closer to 0
+            if (curDragPt > yDrag0) {
+                // Increase range on negative side
+                plot.yDomain[0] = plot.yDomain[0] +
+                    yDragScale * Math.abs(curDragPt - yDragPt);
+            } else {
+                // Increase range on positive side
+                plot.yDomain[1] = plot.yDomain[1] -
+                    yDragScale * Math.abs(curDragPt - yDragPt);
+            }
+        }
+
+        plot.updateAx();
+        plot.redraw();
+
+        yDragPt = curDragPt;
+    };
+    plot.yAxis.call(
+        d3.drag()
+        .on("start", yDragStart)
+        .on("drag", yDrag)
+    );
+
 
     /**
         Function for highlighting parts of the background

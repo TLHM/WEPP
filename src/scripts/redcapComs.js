@@ -13,7 +13,8 @@ export default function redcapComs(selection) {
         pending: false,
         queued: false,
         validConnection: false,
-        attemptCount: 0
+        attemptCount: 0,
+        retry: false
     };
 
     // Create our redcap connection input boxes
@@ -77,7 +78,11 @@ export default function redcapComs(selection) {
         }
 
         // We've failed 10 times in a row...gonna call it quits
-        if(rcComs.attemptCount > 10) return;
+        if(rcComs.attemptCount >= 5){
+            rcComs.retry = true;
+            rcComs.onError('Redcap upload failed!');
+            return;
+        }
         rcComs.attemptCount += 1;
 
         var request = new FormData();
@@ -121,6 +126,10 @@ export default function redcapComs(selection) {
     // Callback for when we're prepped for another upload
     rcComs.onQueueReady = function() {
         console.log("ready for another upload");
+    };
+
+    rcComs.onError = function(msg) {
+        alert(msg);
     };
 
     // Callback function that's triggered when we get a response from redcap

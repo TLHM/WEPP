@@ -270,7 +270,7 @@ export default function erpDataContainer() {
 
         data.onSave(data.pickedPeaks);
 
-        if(Math.abs(1-data.listProgress) < 0.0001) {
+        if(Math.abs(1-data.getProgress()) < 0.0001) {
             data.onComplete();
         }
     };

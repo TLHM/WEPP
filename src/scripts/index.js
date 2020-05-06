@@ -19,6 +19,7 @@ d3.select('body').select('#noScript').style('display','None');
 var overlay = d3.select('#overlay').style('display','block');
 var intro = d3.select('#intro');
 var outro = d3.select('#outro').style('display', 'none');
+var errWin = d3.select('#error').style('display', 'none');
 
 const showIntro = function() {
   intro.style('display','block');
@@ -36,7 +37,21 @@ var closeOver = overlay.append('button').attr('id','closeOverlay')
   .on('click', hideOverlay)
   .attr('class', 'dlButton')
   .text('Close')
-  .attr('display','none');
+  .style('display','none');
+
+const showError = function(message) {
+  intro.style('display','none');
+  outro.style('display','none');
+  overlay.style('display','block');
+
+  errWin.style('display','block')
+    .select('#errMessage').text(message);
+};
+
+errWin.select('#errClose').on('click',function(){
+  errWin.style('display','none');
+  hideOverlay();
+});
 
 // Create our data loader
 var data = erpDataContainer();
@@ -79,10 +94,10 @@ window.addEventListener("resize", function(){
   mainPlot.resize();
 
   // Redraw our data
-  if(data.curERP.bins){
-    mainPlot.showBinData(data.getCurBinData(), data.getSelectedChans());
-    mainPlot.showPeaks(data.getPickedPeaks(), data.getPickedPeaks(false));
-  }
+  // if(data.curERP.bins){
+  //   mainPlot.showBinData(data.getCurBinData(), data.getSelectedChans());
+  //   mainPlot.showPeaks(data.getPickedPeaks(), data.getPickedPeaks(false));
+  // }
 });
 
 // Set some callbacks to link the data and the plot, etc.
@@ -214,6 +229,15 @@ rc.onQueueReady = function() {
 rc.onChangeSettings = function() {
   conf.setConfig('redcapURL', rc.url);
   conf.setConfig('redcapToken', rc.token);
+
+  if(rc.retry) {
+    rc.retry = false;
+    rc.sendPeaksToRedcap(data.getPeaksAsJSON());
+  }
+};
+
+rc.onError = function(msg) {
+  showError(msg + ' Please check your redcap configuration settings, and make sure you\'re connected to the internet.');
 };
 
 // Download button for the config
@@ -344,7 +368,7 @@ const dropFinal = function(droppedFiles) {
 };
 fileIn.on('drop', function(d,i){
   d3.select(this).attr('class','dropzone');
-  
+
   console.log("loading Files");
   const length = d3.event.dataTransfer.items.length;
   var expectedCount = 0;
