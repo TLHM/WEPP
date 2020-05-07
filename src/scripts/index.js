@@ -56,8 +56,8 @@ errWin.select('#errClose').on('click',function(){
 // Create our data loader
 var data = erpDataContainer();
 
-// Margins for our plot, also we want some footer space
-var margin = {top: 10, right: 25, bottom: 30, left: 50};
+// Margins for our plot
+var margin = {top: 10, right: 10, bottom: 30, left: 50};
 
 // Make holder for plot and the info panel to the right
 var plotAndInfo = d3.select('body').append('div').attr('id','plotAndInfo')

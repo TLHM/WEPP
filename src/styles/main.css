@@ -248,3 +248,15 @@ body{
   margin: auto;
   display: flex;
 }
+
+#yAxis {
+  cursor: row-resize;
+}
+
+#dragTarget {
+  cursor: crosshair;
+}
+
+#peakViz {
+  cursor: pointer;
+}

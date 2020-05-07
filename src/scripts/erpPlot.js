@@ -33,7 +33,7 @@ export default function erpPlot(parent, margin)
 
     // w and h are for the full svg area
     // The usable plot area is this minus the margins
-    plot.w = window.innerWidth - 320;
+    plot.w = window.innerWidth - 300;
     plot.h = window.innerHeight*0.8 - 10;
 
     // Set width and height for our svg
@@ -54,7 +54,10 @@ export default function erpPlot(parent, margin)
     plot.yDomain = [-20, 30];
 
     // Group to hold plot background elements
-    plot.background = plot.body.append('g').attr('id', 'background');
+    plot.dragTarget = plot.body.append('g').attr('id', 'dragTarget');
+    plot.background = plot.dragTarget.append('g').attr('id', 'plotBackground');
+    plot.background.append('rect').attr('id', 'backgroundFill')
+        .attr('fill', 'rgba(231, 231, 219, 0.1)');
     plot.bgRectPos = plot.background.append('rect')
         .attr('y',0)
         .attr('height', plot.h-plot.margin.bottom-plot.margin.top)
@@ -88,10 +91,10 @@ export default function erpPlot(parent, margin)
     // Some grid lines, for helping with judging things
     // Grid is always the same size, even if the scale of the
     // Axes changes some (only gets larger, not smaller)
-    plot.xGrid = plot.body.append('g')
+    plot.xGrid = plot.dragTarget.append('g')
         .attr('id', 'xGrid')
         .attr('transform','translate(0,'+(plot.h-plot.margin.bottom-plot.margin.top)+')');
-    plot.yGrid = plot.body.append('g')
+    plot.yGrid = plot.dragTarget.append('g')
         .attr('id', 'yGrid');
 
     // Create calls for manipulating the grid
@@ -111,9 +114,9 @@ export default function erpPlot(parent, margin)
         .attr('stroke-width',1.5);
 
     // This group holds all our lines for real data
-    plot.bgLines = plot.body.append('g').attr('id','bgLines');
-    plot.outlines = plot.body.append('g').attr('id','chanOutlines');
-    plot.lines = plot.body.append('g').attr('id','chanLines');
+    plot.bgLines = plot.dragTarget.append('g').attr('id','bgLines');
+    plot.outlines = plot.dragTarget.append('g').attr('id','chanOutlines');
+    plot.lines = plot.dragTarget.append('g').attr('id','chanLines');
 
     // This group will hold picked peak markers
     plot.peakViz = plot.body.append('g').attr('id','peakViz');
@@ -131,7 +134,9 @@ export default function erpPlot(parent, margin)
     plot.infoOverlay = plot.body.append('g').attr('id', 'infoOver');
 
     // Make our peak info box
-    plot.peakInfo = plot.infoOverlay.append('g').attr('id','peakInfo').attr('class','ignoreDrag');
+    plot.peakInfo = plot.infoOverlay.append('g').attr('id','peakInfo').attr('class','ignoreDrag')
+        .style('cursor','default');
+    plot.peakInfo.curPeak = [-1, -1];
     plot.peakInfo.append('rect').attr('id','bg')
         .attr('width', '80')
         .attr('height', '60')
@@ -164,7 +169,8 @@ export default function erpPlot(parent, margin)
         .text('200');
     var buttonX = 15;
     var buttonY = 40;
-    plot.deletePeakButton = plot.peakInfo.append('g').attr('id', 'deletePeakButton');
+    plot.deletePeakButton = plot.peakInfo.append('g').attr('id', 'deletePeakButton')
+        .style('cursor','default');
     plot.deletePeakButton.append('rect').attr('id', 'buttonBG')
         .attr('width','50')
         .attr('height', '15')
@@ -179,8 +185,18 @@ export default function erpPlot(parent, margin)
         .style('font','11px sans-serif')
         .attr('fill','black')
         .text('Delete');
+    plot.deletePeakButton.on('mouseover',function(d,i){
+        d3.select(this).select('#buttonBG')
+            .attr('stroke', 'rgb(230, 116, 116)')
+            .attr('stroke-width', 1.5);
+    }).on('mouseout', function(d,i){
+        d3.select(this).select('#buttonBG')
+            .attr('stroke', 'grey')
+            .attr('stroke-width', 1);
+    });
     plot.closePeakButton = plot.peakInfo.append('g')
-        .attr('id', 'closePeakInfo');
+        .attr('id', 'closePeakInfo')
+        .style('cursor','default');
     plot.closePeakButton.append('circle').attr('id', 'closeBg')
         .attr('r', 6)
         .attr('stroke','grey')
@@ -190,6 +206,15 @@ export default function erpPlot(parent, margin)
         .attr('x', -3)
         .style('font', '9px sans-serif')
         .text('X');
+    plot.closePeakButton.on('mouseover',function(d,i){
+            d3.select(this).select('#closeBg')
+                .attr('stroke', 'rgb(230, 116, 116)')
+                .attr('stroke-width', 1.5);
+        }).on('mouseout', function(d,i){
+            d3.select(this).select('#closeBg')
+                .attr('stroke', 'grey')
+                .attr('stroke-width', 1);
+        });
     plot.peakInfo.style('visibility','hidden');
 
     // Function to update the axes and grid based on current
@@ -231,6 +256,11 @@ export default function erpPlot(parent, margin)
             .attr("y1",plot.y(0))
             .attr("y2",plot.y(0));
 
+        // Update the background drag hitbox
+        plot.background.select('#backgroundFill')
+            .attr('width', plot.x(plot.xDomain[1])-plot.x(plot.xDomain[0]))
+            .attr('height',plot.y(plot.yDomain[0])-plot.y(plot.yDomain[1]));
+
         // Update the y axis hitbox
         plot.yAxis.select('#hitbox')
             .attr('height',plot.y(plot.yDomain[0]-plot.yDomain[1]));
@@ -238,8 +268,12 @@ export default function erpPlot(parent, margin)
 
     // Helper function for our axes
     plot.getTicks = function(start,stop,step) {
-        start = Math.floor(start/step)*step;
-        return Array(Math.ceil((stop - start) / step)+0).fill(start).map((x, i) => x + i * step);
+        var startI = Math.floor(start/step)*step;
+        var a = Array(Math.ceil((stop - startI) / step)+1).fill(startI).map((x, i) => x + i * step);
+        a[0] = start;
+        a[a.length-1] = stop;
+
+        return a;
     };
 
     // Function to set our size properly given a parent div
@@ -579,6 +613,12 @@ export default function erpPlot(parent, margin)
 
     // Selects a peak to display its info
     plot.showPeakInfo = function(d, i) {
+        // If we're already showing it, turn it off
+        if(plot.peakInfo.curPeak[0]===d && plot.peakInfo.curPeak[1]===i){
+            plot.hidePeakInfo();
+            return;
+        }
+
         // Save this info for later
         plot.peakInfo.curPeak = [d,i];
 
@@ -628,6 +668,7 @@ export default function erpPlot(parent, margin)
     // Hides the peak info box
     plot.hidePeakInfo = function() {
         plot.peakInfo.style('visibility', 'hidden');
+        plot.peakInfo.curPeak = [-1, -1];
     };
     plot.closePeakButton.on('click', plot.hidePeakInfo);
 
