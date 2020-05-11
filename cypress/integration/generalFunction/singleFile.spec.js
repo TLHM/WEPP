@@ -179,5 +179,42 @@ context('singleFileLoading', () => {
       });
   });
 
+  it.only('Gets to the outro screen', () => {
+    // Make sure we have some chans displaying
+    cy.get("#chanLines path")
+      .should('have.length', 2);
+
+    cy.get('#plotSVG')
+      .click('center');
+
+    cy.get('#posPeaks circle')
+      .should('have.length', 2);
+
+    // Accept peaks, move on to next bin
+    cy.get('body')
+      .type(' ');
+
+    cy.wait(500);
+
+    // cy.get('#binSelect')
+    //   .should('have.value', '2');
+
+    // Click and accept twice
+    cy.get('#plotSVG')
+      .click('center');
+    cy.get('body')
+      .type(' ');
+    // cy.get('#binSelect')
+    //   .should('have.value', '3');
+
+    cy.get('#plotSVG')
+      .click('center');
+    cy.get('body')
+      .type(' ');
+
+    // Should find the overlay and the outro should be visible
+    cy.get('#outro').should('be.visible');
+  });
+
 
 });
