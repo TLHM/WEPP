@@ -179,7 +179,7 @@ context('singleFileLoading', () => {
       });
   });
 
-  it.only('Gets to the outro screen', () => {
+  it('Gets to the outro screen', () => {
     // Make sure we have some chans displaying
     cy.get("#chanLines path")
       .should('have.length', 2);
