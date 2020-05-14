@@ -17,7 +17,7 @@ export default function createPlotConfig(myDiv)
     config: {
       redcapURL: 'https://poa-redcap.med.yale.edu/api/',
       redcapToken: '',
-      selectedChannels: [],
+      selectedChannelNames: [],
       defaultWindows: [],
       selectedBins: [],
       selectedBinCount: [],
@@ -182,8 +182,8 @@ export default function createPlotConfig(myDiv)
     }
   };
 
-  conf.updateSelectedChans = function(sel) {
-    conf.config.selectedChannels = sel;
+  conf.updateSelectedChanNames = function(selNames) {
+    conf.config.selectedChannelNames = selNames;
   };
 
   // Shows / hides config div

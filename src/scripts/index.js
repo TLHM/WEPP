@@ -107,7 +107,7 @@ conf.onChangeConfig = function(config) {
 
   conf.showBins(data.getBinNames(), config.selectedBins);
 
-  data.setConfig('selectedChannels', config.selectedChannels);
+  data.setConfig('selectedChanNames', config.selectedChannelNames);
   if(config.selectedBinCount > 0) {
     data.setConfig('selectedBinCount', config.selectedBinCount);
     data.setConfig('selectedBins', config.selectedBins);
@@ -121,7 +121,7 @@ conf.onChangeConfig = function(config) {
 };
 
 data.onConfigUpdate = function(config) {
-  conf.updateSelectedChans(config.selectedChannels);
+  conf.updateSelectedChanNames(config.selectedChanNames);
 };
 
 data.onFindConf = function(file) {
@@ -159,7 +159,8 @@ data.onChanSelect = function(sel, names, locs) {
   mainPlot.showBinData(data.getCurBinData(), sel);
   mainPlot.showPeaks(data.getPickedPeaks(), data.getPickedPeaks(false));
 
-  conf.updateSelectedChans(sel);
+  var selNames = sel.map(x => names[x]);
+  conf.updateSelectedChanNames(selNames);
 };
 
 data.onComplete = function() {

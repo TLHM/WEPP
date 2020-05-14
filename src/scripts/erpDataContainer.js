@@ -15,6 +15,7 @@ export default function erpDataContainer() {
         confFil: {},
         config: {
             selectedChannels: [],
+            selectedChanNames: [],
             selectedBins: [],
             selectedBinCount: [],
         },
@@ -102,6 +103,20 @@ export default function erpDataContainer() {
         console.log('found a config file');
     };
 
+    data.recalculateSelectedChans = function(){
+        if(!data.curERP.chans) return;
+
+        data.config.selectedChannels = data.config.selectedChanNames.map(x => data.curERP.chans.indexOf(x));
+
+        // If we don't find any of the channels, we'll need to redo this
+        // Remove any -1 from our array
+        for(var ir=data.config.selectedChannels.length-1; ir>=0; ir--){
+            if(data.config.selectedChannels[ir]==-1) data.config.selectedChannels = data.config.selectedChannels.splice(ir,1);
+        }
+
+        data.curERP.selectedChannels = data.config.selectedChannels;
+    };
+
     data.loadJSON = function(jsonData) {
         data.curERP = jsonData;
         data.curERP.fileName = data.curFileName;
@@ -120,25 +135,55 @@ export default function erpDataContainer() {
             while(data.curBinIndex<data.config.selectedBins.length-1 && !data.config.selectedBins[data.curBinIndex]) data.curBinIndex+=1;
         }
 
-        // Estimate the "important" channels, ie ones not named E##
-        // If there are none, pick the middle channel arbitrarily
-        if(data.config.selectedChannels.length != data.curERP.chans.length) {
+        // If we have channel names, select those
+        if(data.config.selectedChanNames.length > 0) {
+            data.config.selectedChannels = data.config.selectedChanNames.map(x => data.curERP.chans.indexOf(x));
+
+            // If we don't find any of the channels, we'll need to redo this
+            // Remove any -1 from our array
+            for(var ir=data.config.selectedChannels.length-1; ir>=0; ir--){
+                if(data.config.selectedChannels[ir]==-1) data.config.selectedChannels = data.config.selectedChannels.splice(ir,1);
+            }
+            data.curERP.selectedChannels = data.config.selectedChannels;
+            if(data.config.selectedChannels.length < 1) data.config.selectedChanNames = [];
+        }
+
+        // If we don't have chan names, default to non E## channels
+        if(data.config.selectedChanNames.length==0) {
             var chanRegex = /E\d+/;
-            data.curERP.selectedChannels = [];
+            data.config.selectedChannels = [];
             for(var i=0; i < data.curERP.chans.length; i++) {
                 if(!chanRegex.test(data.curERP.chans[i])) {
-                    data.curERP.selectedChannels.push(i);
+                    data.config.selectedChanNames.push(data.curERP.chans[i]);
+                    data.config.selectedChannels.push(i);
                 }
             }
-            data.config.selectedChannels = data.curERP.selectedChannels;
-            data.onConfigUpdate(data.config);
-        } else {
+
+            // Update selectedChannels
             data.curERP.selectedChannels = data.config.selectedChannels;
+
+            data.onConfigUpdate(data.config);
         }
+
+        // Estimate the "important" channels, ie ones not named E##
+        // If there are none, pick the middle channel arbitrarily
+        // if(data.config.selectedChannels.length != data.curERP.chans.length) {
+        //     var chanRegex = /E\d+/;
+        //     data.curERP.selectedChannels = [];
+        //     for(var i=0; i < data.curERP.chans.length; i++) {
+        //         if(!chanRegex.test(data.curERP.chans[i])) {
+        //             data.curERP.selectedChannels.push(i);
+        //         }
+        //     }
+        //     data.config.selectedChannels = data.curERP.selectedChannels;
+        //     data.onConfigUpdate(data.config);
+        // } else {
+        //     data.curERP.selectedChannels = data.config.selectedChannels;
+        // }
         // console.log(data.curERP.selectedChannels);
 
         // Get our important channel names
-        data.curERP.selectedChanNames = data.config.selectedChannels.map(x => data.curERP.chans[x]);
+        // data.curERP.selectedChanNames = data.config.selectedChannels.map(x => data.curERP.chans[x]);
 
         data.onNewERPFile(data.curERP);
         data.onNewBin(data.curERP.bins[data.curBinIndex], data.curERP.selectedChannels);
@@ -226,6 +271,7 @@ export default function erpDataContainer() {
     // Function to update the config
     data.setConfig = function(key, value) {
       data.config[key] = value;
+      if(key == 'selectedChanNames') data.recalculateSelectedChans();
     };
 
     // Peaks!
