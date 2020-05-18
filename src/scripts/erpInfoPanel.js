@@ -12,6 +12,18 @@ export default function erpInfoPanel(selection) {
     selection: selection,
   };
 
+  // Progress bar
+  var progContainer = panel.selection.append('div')
+    .attr('id', 'progContainer')
+    .style('display','flex');
+  var progLabel = progContainer.append('div')
+    .attr('id','progressLabel');
+  var progBG = progContainer.append('div')
+    .attr('id', 'progressBG');
+  var progBar = progBG.append('div')
+    .attr('id', 'progressBar')
+    .style('width', '0%');
+
   // Set up the File Name and Bin selection / display
   panel.selection.append('div').attr('id','fileBin');
   panel.fileSelect = panel.selection.select('#fileBin').append('select')
@@ -33,7 +45,7 @@ export default function erpInfoPanel(selection) {
 
   panel.setBins = function(binNames, binSelection) {
     if(!binSelection) binSelection = binNames.map(d => true);
-    
+
     panel.binSelect.selectAll('option')
       .data(binNames)
       .join('option')
@@ -59,21 +71,35 @@ export default function erpInfoPanel(selection) {
     panel.binSelect.property('value',''+index);
   };
 
-  // Progress bar
-  var progContainer = panel.selection.append('div')
-    .attr('id', 'progContainer')
+  // Good / bad trial count
+  var trialCount = panel.selection.append('div')
+    .attr('id', 'trialCount')
+    .style('margin-right','10px');
+  var trialLabels = trialCount.append('div').attr('id', 'trialLabels')
     .style('display','flex');
-  var progLabel = progContainer.append('div')
-    .attr('id','progressLabel');
-  var progBG = progContainer.append('div')
-    .attr('id', 'progressBG');
-  var progBar = progBG.append('div')
-    .attr('id', 'progressBar')
-    .style('width', '0%');
+  var goodLabel = trialLabels.append('div')
+    .attr('id','goodCount')
+    .attr('class', 'trialLabel');
+  var badLabel = trialLabels.append('div')
+    .attr('id', 'badCount')
+    .attr('class', 'trialLabel');
+  var trialBar = trialCount.append('div')
+    .attr('id','trialBar');
+  var goodBar = trialBar.append('div')
+    .attr('id','goodBar')
+    .style('width', '100%');
 
   panel.setProgress = function( percent ) {
     progLabel.text((percent*100).toFixed(1)+'%');
     progBar.style('width', (percent*100).toFixed(2)+'%');
+  };
+
+  panel.setTrials = function( good, bad ){
+    const total = good + bad;
+    goodLabel.text(good+' Good Trials');
+    badLabel.text(bad+' Bad Trials');
+
+    goodBar.style('width', ((good/total)*100).toFixed(2)+'%');
   };
 
   // Channel diaply and selection

@@ -150,6 +150,7 @@ data.onNewBin = function(bin, selectedChannels) {
   mainPlot.highlightDefault();
 
   iPanel.selectBin(data.curBinIndex);
+  iPanel.setTrials(bin.good, bin.bad);
 };
 
 data.onChanSelect = function(sel, names, locs) {
@@ -255,7 +256,7 @@ var loadConfLabel = buttonCol.append('label')
   .text("Load Config File")
   .attr('class', 'browseFileLabel configPrompt')
   .attr('for','upConfig')
-  .style('height','20px')
+  .style('height','18px')
   .style('margin','5px');
 var loadConf = buttonCol.append('input').attr('id', 'upConfig')
   .attr('type',"file")

@@ -147,16 +147,17 @@ body{
 #progressBG {
   height: 10px;
   background-color: rgb(197, 205, 205);
-  border: 1px solid black;
+  border: 1px solid rgb(69, 69, 69);
   flex-grow: 1;
-  margin-right: 5px;
+  margin-right: 10px;
+  margin-bottom: 10px;
 }
 
 #progressLabel {
   width: 40px;
   font: .8em monospace;
   text-align: right;
-  margin-top: auto;
+  margin-top: 1px;;
   margin-right: 3px;
 }
 
@@ -210,8 +211,9 @@ body{
 .browseFileLabel {
     border: 1px solid #ccc;
     display: inline-block;
-    padding: 6px 12px;
-    cursor: pointer;
+    padding: 6px 12px 0px 12px;
+    cursor: default;
+    border-radius: 5px;
 }
 
 #binSelConf {
@@ -259,4 +261,29 @@ body{
 
 #peakViz {
   cursor: pointer;
+}
+
+.trialLabel {
+  font: 12px sans-serif;
+}
+
+#badCount {
+  color: rgb(246, 200, 97);
+  margin-left: auto;
+}
+
+#goodCount {
+  color: rgb(73, 163, 246);
+}
+
+#trialBar {
+  height: 10px;
+  background-color: rgb(246, 200, 97);
+  margin-bottom: 10px;
+  border: 1px solid rgb(69, 69, 69);
+}
+
+#goodBar {
+  height: 100%;
+  background-color: rgb(73, 163, 246);
 }

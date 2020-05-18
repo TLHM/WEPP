@@ -117,7 +117,7 @@ context('erpDataContainer unit tests', () => {
     });
   });
 
-  it.only("Includes modified peaks for uploading", function(){
+  it("Includes modified peaks for uploading", function(){
     // Picks first file
     for(var i=0; i< 3; i++) {
       this.data.calcPeaks(1, [100,200]);
