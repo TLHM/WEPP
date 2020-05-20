@@ -75,7 +75,10 @@ body{
 }
 
 #fileIn {
-  margin: 10px 40px 10px;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-flow: column;
 }
 
 .lineType0 {
@@ -203,9 +206,21 @@ body{
   transform: translate(-50%,-50%);
   -ms-transform: translate(-50%,-50%);
   background-color: white;
-  padding: 15px;
   border-radius: 20px;
   border: 1px solid black;
+  overflow: hidden;
+}
+
+#introContent {
+  margin: 15px;
+}
+
+#introTitle {
+  padding: 25px 15px;
+  margin: 0px;
+  background: rgb(49, 105, 172);
+  color: #fff;
+  text-align: center;
 }
 
 .browseFileLabel {
@@ -214,6 +229,20 @@ body{
     padding: 6px 12px 0px 12px;
     cursor: default;
     border-radius: 5px;
+}
+
+#selDirLabel {
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 10px;
+  width: 100px;
+  padding: 6px 12px 2px 12px;
+  text-align: center;
+}
+
+#selDirLabel:hover{
+  border: 1px solid rgb(49, 105, 172);
+  background: rgb(227, 237, 249);
 }
 
 #binSelConf {
@@ -228,7 +257,7 @@ body{
 .dropzone {
   border: 2px dashed #ccc;
   border-radius: 20px;
-  width: 480px;
+  width: 450px;
   font-family: sans-serif;
   margin: 100px auto;
   padding: 20px;
@@ -237,9 +266,9 @@ body{
   border-color: rgb(67, 124, 252);
 }
 
-#dropLabel {
-  display: inline-block;
-  margin: 0px 10px;
+.dropLabel {
+  margin: 10px 10px 5px 10px;
+  text-align: center;
 }
 
 #errTitle {

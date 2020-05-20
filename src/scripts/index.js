@@ -315,15 +315,17 @@ const stahp = function(){
   d3.event.preventDefault();
   d3.event.stopPropagation();
 };
-var fileIn = intro.append('div')
+var fileIn = intro.select('#introContent').append('div')
   .attr('id','fileIn')
   .attr('class', 'dropzone');
 fileIn.append('label').attr('id', 'selDirLabel')
   .text("Browse")
   .attr('class', 'browseFileLabel')
   .attr('for','selectDir');
-fileIn.append('div').attr('id','dropLabel')
-  .text(' or Drop a folder here.');
+fileIn.append('div').attr('class','dropLabel')
+  .text(' or ')
+fileIn.append('div').attr('class','dropLabel')
+  .text('Drop a folder here.');
 fileIn.append('input')
   .attr('type',"file")
   .attr("id","selectDir")
