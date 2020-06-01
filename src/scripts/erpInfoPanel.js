@@ -132,7 +132,7 @@ export default function erpInfoPanel(selection) {
     origR = d3.select(this).attr('r');
     origFill = d3.select(this).attr('fill');
     hoverID = i;
-    d3.select(this).attr('r',0.6).attr('fill','orange');
+    d3.select(this).attr('r',0.6).attr('fill','#177AFD');
 
     // Specify where to put label of text
     chanLabel.text(d);
@@ -173,8 +173,8 @@ export default function erpInfoPanel(selection) {
         return Math.sin(panel.deg2rad(locs[i][0]))*locs[i][1]*13;
       })
       .attr('r', '.45')
-      .attr('fill', (d,i) => sel.includes(i) ? 'rgb(118, 182, 228)' : 'white')
-      .attr('stroke', (d,i) => sel.includes(i) ? 'rgb(67, 124, 252)' : 'black')
+      .attr('fill', (d,i) => sel.includes(i) ? '#013375' : 'white')
+      .attr('stroke', (d,i) => sel.includes(i) ? '#013375' : 'black')
       .attr('stroke-width', (d,i) => sel.includes(i) ? '0.15' : '0.1')
       .on("mouseover", panel.handleMouseOver)
       .on("mouseout", panel.handleMouseOut)

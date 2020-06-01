@@ -17,7 +17,7 @@ body{
 
 .chanLine {
   opacity: 1;
-  stroke: rgb(67, 124, 252);
+  stroke: #013375;
   stroke-width: 2;
   fill: none;
 }
@@ -25,25 +25,25 @@ body{
 .selectPos {
   opacity: .2;
   stroke: none;
-  fill: rgb(246, 170, 55);
+  fill: #437fd4;
 }
 
 .selectNeg {
   opacity: .2;
   stroke: none;
-  fill: rgb(120, 189, 238);
+  fill: #FF9524;
 }
 
 .posPeak {
-  stroke: rgb(238, 62, 51);
+  stroke: #437fd4;
   stroke-width: 3;
-  fill: rgba(241, 6, 6, 0.10);
+  fill: #437fd40a;
 }
 
 .negPeak {
-  stroke: rgb(229, 27, 254);
+  stroke: #FF9524;
   stroke-width: 3;
-  fill: rgba(229, 27, 254, 0.10);
+  fill: #FF95240a;
 }
 
 #infoPanel {
@@ -109,7 +109,7 @@ body{
 }
 
 #confTitle:hover {
-  background-color: rgb(174, 185, 205);
+  background-color: #437fd42f;
 }
 
 .configPrompt {
@@ -166,7 +166,7 @@ body{
 
 #progressBar {
   height: 100%;
-  background-color: rgb(67, 124, 252);
+  background-color: #437fd4;
 }
 
 #notesTitle {
@@ -218,7 +218,7 @@ body{
 #introTitle {
   padding: 25px 15px;
   margin: 0px;
-  background: rgb(49, 105, 172);
+  background: #013375;
   color: #fff;
   text-align: center;
 }
@@ -241,7 +241,7 @@ body{
 }
 
 #selDirLabel:hover{
-  border: 1px solid rgb(49, 105, 172);
+  border: 1px solid #013375;
   background: rgb(227, 237, 249);
 }
 
@@ -263,7 +263,7 @@ body{
   padding: 20px;
 }
 .dropzone.dropzoneHighlight{
-  border-color: rgb(67, 124, 252);
+  border-color: #437fd4;
 }
 
 .dropLabel {
@@ -297,22 +297,22 @@ body{
 }
 
 #badCount {
-  color: rgb(246, 200, 97);
+  color: #FF9524;
   margin-left: auto;
 }
 
 #goodCount {
-  color: rgb(73, 163, 246);
+  color: #437fd4;
 }
 
 #trialBar {
   height: 10px;
-  background-color: rgb(246, 200, 97);
+  background-color: #FF9524;
   margin-bottom: 10px;
   border: 1px solid rgb(69, 69, 69);
 }
 
 #goodBar {
   height: 100%;
-  background-color: rgb(73, 163, 246);
+  background-color: #437fd4;
 }

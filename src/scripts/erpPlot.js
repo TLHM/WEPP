@@ -690,7 +690,7 @@ export default function erpPlot(parent, margin)
         }else{
             plot.curSel = plot.bgLines.selectAll("path").nodes()[selLoc.index];
         }
-        d3.select(plot.curSel).style('stroke','orange')
+        d3.select(plot.curSel).style('stroke','#177AFD')
             .style('stroke-width', 2)
             .style('opacity', 1);
     };
