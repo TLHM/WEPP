@@ -25,7 +25,7 @@ jobs:
     - name: FTP-Deploy-Action
       uses: SamKirkland/FTP-Deploy-Action@3.1.1
       with:
-        ftp-server: ftp://ftp.locuserule.us
-        ftp-username: takumi@locuserule.us
+        ftp-server: ftp://ftp.locuscoerule.us/
+        ftp-username: takumi@locuscoerule.us
         ftp-password: ${{ secrets.FTP_PASSWORD }}
         local-dir: dist # This folder is NOT going to upload by default unless you add it to .git-ftp-include
