@@ -1,7 +1,7 @@
 # WEPP
 Browser based tool for manual peak picking for ERP data.
 
-!(Screenshot of WEPP)[img/WEPP_Screenshot.jpeg]
+!(Screenshot of WEPP)[img/WEPP_Screenshot.jpg]
 
 --
 
