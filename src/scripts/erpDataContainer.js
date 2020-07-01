@@ -120,6 +120,11 @@ export default function erpDataContainer() {
     data.loadJSON = function(jsonData) {
         data.curERP = jsonData;
         data.curERP.fileName = data.curFileName;
+        console.log(data.curERP);
+
+        // If we only have 1 bin, the JSON might have it as a single object,
+        // rather than an array. So make it an array.
+        if(!Array.isArray(data.curERP.bins)) data.curERP.bins = [data.curERP.bins];
 
         // If we haven't selected bins, select them all
         if(data.config.selectedBins.length === 0) {
