@@ -162,6 +162,8 @@ data.onChanSelect = function(sel, names, locs) {
 
   var selNames = sel.map(x => names[x]);
   conf.updateSelectedChanNames(selNames);
+
+  data.config.selectedChanNames = selNames;
 };
 
 data.onComplete = function() {
