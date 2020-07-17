@@ -8,11 +8,14 @@ Browser based tool for manual peak picking for ERP data.
 ## Usage
 WEPP (Web ERP Peak Picker) is a GUI tool for picking peak features in ERP data. To use, simply visit the live version [HERE](http://locuscoerule.us/WEPP/) or clone this repository, navigate to it in a terminal, and run:  
 
+This requires Node.js to be installed on your machine.
+
+
 ```
 npm install
 npm start
 ```  
-to open run it locally on your machine. This requires Node.js to be installed on your machine.
+If everything worked correctly, after you ran  `npm start` a browser window should have popped up running peak picker. 
 
 ### Loading a Project Folder
 Upon loading WEPP, you will be prompted to load a project folder. Simply use the browse dialogue window to select a folder, or drag a folder into the area on screen.
