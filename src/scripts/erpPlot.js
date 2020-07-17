@@ -107,11 +107,11 @@ export default function erpPlot(parent, margin)
 
     // Create thicker lines for 0's
     plot.x0 = plot.xGrid.append('line')
-        .attr('stroke','currentColor')
-        .attr('stroke-width',1.5);
+        .attr('stroke','#d6d6d6')
+        .attr('stroke-width',3.5);
     plot.y0 = plot.yGrid.append('line')
-        .attr('stroke','currentColor')
-        .attr('stroke-width',1.5);
+        .attr('stroke','#d6d6d6')
+        .attr('stroke-width',3.5);
 
     // This group holds all our lines for real data
     plot.bgLines = plot.dragTarget.append('g').attr('id','bgLines');
@@ -573,7 +573,7 @@ export default function erpPlot(parent, margin)
                 .attr('x', Math.min(plot.dragPos[0],plot.dragPos[1]))
                 .attr('width', Math.abs(plot.dragPos[0]-plot.dragPos[1]));
         }
-
+        // this is outsite of those if s up there.
         plot.onHighlight(
             [
                 plot.x.invert(Math.min(plot.dragPos[0],plot.dragPos[1])),
