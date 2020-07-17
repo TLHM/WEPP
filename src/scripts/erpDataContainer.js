@@ -590,7 +590,8 @@ export default function erpDataContainer() {
         csv = csv.join('\r\n');
 
         const csvBlob = new Blob([csv], {type:'txt/csv'});
-        downloadBlob(csvBlob, 'peaks.csv');
+        // get the peaksdate time.
+        downloadBlob(csvBlob, "peaks_".concat(Date.now(),"_.csv"));
     };
 
     data.getProgress = function() {
