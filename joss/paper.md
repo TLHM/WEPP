@@ -59,7 +59,7 @@ Currently the only data that we use are:
 - The sample time indices in ms i.e., [1,2,3,4,5]
 - The experimental condition e.g., face, house, good sound, scary sound.
 - The channel names and locations (although it works fine if you don't have the locations)
-We provide Matlab and Python scripts for reformatting ERPLAB (ref) 'ERP' files and instructions for formatting netstation individual averaged files for import as these are the formats that we have the most experience with and are common in the field. However, we are happy to collaborate with users of other systems to support importing ERP files from other formats. 
+We provide Matlab and Python scripts for reformatting ERPLAB (ref) '.erp' files and instructions for formatting netstation individual averaged files for import as these are the formats that we have the most experience with and are common in the field. However, we are happy to collaborate with users of other systems to support importing ERP files from other formats.
 
 
 # Conclusion.

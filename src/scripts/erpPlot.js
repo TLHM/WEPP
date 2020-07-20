@@ -422,6 +422,17 @@ export default function erpPlot(parent, margin)
             .attr("cy", function(d){ return plot.y(d.amplitude); });
     };
 
+// FUNCTION  to make sure that we drag our windows sensitive to our sample space.
+
+    plot.closestX = function(arr,val){
+        var closest = -500;
+        for(var i = 0; i < arr.length; i++){
+            if(arr[i] >= val && arr[i] < val) closest = arr[i];
+        }
+
+    return closest;
+    }
+
     /**
         Drag handlers for highlighting time ranges
     */
@@ -434,7 +445,6 @@ export default function erpPlot(parent, margin)
     plot.dragStart = function()
     {
         //console.log(d3.event.sourceEvent.button);
-        //console.log(d3.event.sourceEvent);
 
         // Ignore all drags from elements that are (children of) 'ignoreDrag' class
         var cur = d3.event.sourceEvent.originalTarget;
@@ -449,9 +459,12 @@ export default function erpPlot(parent, margin)
         plot.clickType = d3.event.sourceEvent.button==0 ? 1 : 2;
         plot.dragPos[0] = d3.mouse(this)[0] - plot.margin.left;
         plot.dragPos[1] = plot.dragPos[0];
+
+
     };
     plot.dragUpdate= function()
     {
+
         if(plot.ignoreDrag) return;
         plot.hidePeakInfo();
 
@@ -460,6 +473,12 @@ export default function erpPlot(parent, margin)
 
         // Update highlight rect
         plot.highlight();
+        console.log(plot.closestX(plot.curTimes,d3.mouse(this)[0]));
+        console.log(d3.mouse(this)[0] - plot.margin.left);
+        //console.log("\n");
+
+
+
     };
     plot.onDragEnd = function() {
         console.log('drag has ended');
