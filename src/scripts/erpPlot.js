@@ -440,7 +440,7 @@ export default function erpPlot(parent, margin)
     // 2 for right mouse (negative)
     // We translate it into pos:1, neg:2 and keep that as clickType
     plot.clickType = -1;
-    plot.dragPos = [0, 0]; // Start, and dx
+    plot.dragPos = [0, 0]; // Starting x, current/ending x
     plot.ignoreDrag = false; // Able to ignore a drag if it starts on certain targets
     plot.dragStart = function()
     {

@@ -378,8 +378,21 @@ export default function erpDataContainer() {
         var neighbors = 3;
 
         // Translate our time in ms to indicies in our data arrays
-        var indicies = [t.indexOf(Math.round(timeRange[0])),
-            t.indexOf(Math.round(timeRange[1]))];
+        // We want to find the index closest to our values
+        // Go through time array, keep the indicies where abs dif is minimal
+        var indicies = [-1, -1];
+        var mins = [999, 999];
+        for(var ind = 0; ind < t.length; ind++){
+            if(Math.abs(t[ind]-timeRange[0]) < mins[0]){
+                mins[0] = Math.abs(t[ind]-timeRange[0]);
+                indicies[0] = ind;
+            } else if(Math.abs(t[ind]-timeRange[1]) < mins[1]){
+                mins[1] = Math.abs(t[ind]-timeRange[1]);
+                indicies[1] = ind;
+            }
+        }
+
+        // Prevent out of bounds
         if(indicies[0]<neighbors) indicies[0] = neighbors;
         if(indicies[1]>t.length-neighbors) indicies[1] = t.length-neighbors;
 
@@ -463,10 +476,12 @@ export default function erpDataContainer() {
 
         // Construct our peak object, push it into our picked peaks
         const now = new Date(Date.now());
+        const plainTextPeakPolarity = ['','positive','negative'];
+        
         var peak = {
             record_id: data.peakIndexCounter + curRoundInd,
             filename: data.curFileName,
-            peakpolarity: peakType,
+            peakpolarity: plainTextPeakPolarity[peakType],
             latency: peakLats[0],
             amplitude: curExtreme,
             bin: data.curERP.bins[data.curBinIndex].name,
@@ -568,8 +583,8 @@ export default function erpDataContainer() {
     // Returns out pos and neg peaks
     // Includes temp peaks
     data.getPickedPeaks = function(positive=true) {
-        const temps = data.tempPeaks.filter(p => p.peakpolarity==(positive ? 1 : 2));
-        return data.pickedPeaks.filter(p => p.peakpolarity==(positive ? 1 : 2)).concat(temps);
+        const temps = data.tempPeaks.filter(p => p.peakpolarity==(positive ? 'positive' : 'negative'));
+        return data.pickedPeaks.filter(p => p.peakpolarity==(positive ? 'positive' : 'negative')).concat(temps);
     };
 
     // Exports peak archive + current picked peaks to a csv string for download
