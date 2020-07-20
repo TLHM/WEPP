@@ -378,8 +378,21 @@ export default function erpDataContainer() {
         var neighbors = 3;
 
         // Translate our time in ms to indicies in our data arrays
-        var indicies = [t.indexOf(Math.round(timeRange[0])),
-            t.indexOf(Math.round(timeRange[1]))];
+        // We want to find the index closest to our values
+        // Go through time array, keep the indicies where abs dif is minimal
+        var indicies = [-1, -1];
+        var mins = [999, 999];
+        for(var ind = 0; ind < t.length; ind++){
+            if(Math.abs(t[ind]-timeRange[0]) < mins[0]){
+                mins[0] = Math.abs(t[ind]-timeRange[0]);
+                indicies[0] = ind;
+            } else if(Math.abs(t[ind]-timeRange[1]) < mins[1]){
+                mins[1] = Math.abs(t[ind]-timeRange[1]);
+                indicies[1] = ind;
+            }
+        }
+
+        // Prevent out of bounds
         if(indicies[0]<neighbors) indicies[0] = neighbors;
         if(indicies[1]>t.length-neighbors) indicies[1] = t.length-neighbors;
 
