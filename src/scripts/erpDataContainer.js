@@ -485,6 +485,8 @@ export default function erpDataContainer() {
             bin: data.curERP.bins[data.curBinIndex].name,
             chan: data.curERP.chans[channel],
             timestamp: now.toUTCString(),
+            startTime: Math.round(timeRange[0]),
+            endTime:Math.round(timeRange[1]),
             notes: "",
         };
         data.tempPeaks.push(peak);
