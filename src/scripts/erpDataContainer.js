@@ -476,10 +476,12 @@ export default function erpDataContainer() {
 
         // Construct our peak object, push it into our picked peaks
         const now = new Date(Date.now());
+        const plainTextPeakPolarity = ['','positive','negative'];
+        
         var peak = {
             record_id: data.peakIndexCounter + curRoundInd,
             filename: data.curFileName,
-            peakpolarity: peakType,
+            peakpolarity: plainTextPeakPolarity[peakType],
             latency: peakLats[0],
             amplitude: curExtreme,
             bin: data.curERP.bins[data.curBinIndex].name,
@@ -581,8 +583,8 @@ export default function erpDataContainer() {
     // Returns out pos and neg peaks
     // Includes temp peaks
     data.getPickedPeaks = function(positive=true) {
-        const temps = data.tempPeaks.filter(p => p.peakpolarity==(positive ? 1 : 2));
-        return data.pickedPeaks.filter(p => p.peakpolarity==(positive ? 1 : 2)).concat(temps);
+        const temps = data.tempPeaks.filter(p => p.peakpolarity==(positive ? 'positive' : 'negative'));
+        return data.pickedPeaks.filter(p => p.peakpolarity==(positive ? 'positive' : 'negative')).concat(temps);
     };
 
     // Exports peak archive + current picked peaks to a csv string for download
