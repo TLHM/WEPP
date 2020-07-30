@@ -13,19 +13,19 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: '12.x'
-        
+
     - name: Build Project
       run: |
         npm install
         npm run build --if-present
-        
+
     - name: List output files
       run: ls
-      
+
     - name: FTP-Deploy-Action
       uses: SamKirkland/FTP-Deploy-Action@3.1.1
       with:
-        ftp-server: ftp://ftp.locuscoerule.us/
+        ftp-server: ftp://ftp.locuscoerule.us/WEPP
         ftp-username: takumi@locuscoerule.us
         ftp-password: ${{ secrets.FTP_PASSWORD }}
         local-dir: dist # This folder is NOT going to upload by default unless you add it to .git-ftp-include
