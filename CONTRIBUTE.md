@@ -88,3 +88,33 @@ There will be a GUI window that opens, and you can select your spec file from th
 You can do monkey testing with gremlins.js, to see how random input affects the app. This can be done by pressing `g` twice in rapid succession on the app page.
 
 Note the at the moment, the gremlins break thanks to a bug in the gremlins code. If you manually edit the html to not include any `<input type="number>` elements, it will work as intended. Bug has been reported and will hopefully be fixed relatively soon.
+
+## General File Layout
+
+### blobDL.js
+
+Provides a function for downloading a blob, allowing the user to download configuration and output csv files.
+
+### erpDataContainer.js
+
+Loads and keeps track of the ERP data. Also loads and tracks configuration, but tries to give the plotConfig supermacy in that department.
+
+Responsible for holding the current ERP data, switching between bins and files, etc.
+
+### erpInfoPanel.js
+
+Provides the panel of information to the right of the main plot. Mostly, it is GUI elements that need to communicate with the data container. All the communications are set / pipe through index.js
+
+### erpPlot.js
+
+Responisble for actually creating / displaying the main plot. Similar to the info panel, gets communications with the current data through glue in index.js
+
+### index.js
+
+Is the primary script, and glues everything together with proper communication and updates as things change. A large portion of it is replacing default callbacks with more useful ones that properly update scripts after settings or data are changed.
+
+### plotConfig.js
+
+Makes the panel of configuration inputs at the bottom of the page, and keeps track of the configuration values.
+
+### redcapComs.jsUploads data to Redcap, if connection information is provided and valid.
